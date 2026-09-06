@@ -1,20 +1,17 @@
 {
   "name": "sonora-fan",
-  "version": "2.1.0",
-  "description": "Sonora Fan — Plataforma de música colaborativa segura",
+  "version": "2.0.0",
+  "description": "Sonora Fan — Plataforma de música colaborativa",
   "main": "server.js",
   "scripts": {
-    "start": "NODE_ENV=production node server.js",
+    "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "express-rate-limit": "^7.1.5",
-    "firebase-admin": "^12.1.0",
-    "helmet": "^7.1.0",
-    "socket.io": "^4.7.2"
+    "socket.io": "^4.7.2",
+    "firebase-admin": "^12.1.0"
   },
   "engines": {
     "node": "18.17.1"
