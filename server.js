@@ -33,6 +33,10 @@ const db = admin.firestore();
 
 // ===== APP =====
 const app = express();
+
+// ===== CONFIGURAÇÃO DE PROXY (IMPORTANTE PARA RENDER) =====
+app.set('trust proxy', 1); // Confia no primeiro proxy (X-Forwarded-For)
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -43,14 +47,13 @@ const io = new Server(server, {
 });
 
 // ===== SEGURANÇA =====
-// Helmet com CSP
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
-        "'unsafe-inline'", // necessário para scripts inline (pode ser substituído por nonce em produção)
+        "'unsafe-inline'",
         "https://www.gstatic.com",
         "https://www.youtube.com",
         "https://cdnjs.cloudflare.com",
@@ -91,13 +94,12 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
-// CORS
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true,
 }));
 
-// Rate limiting
+// ===== RATE LIMITING =====
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 100, // limite por IP
@@ -110,7 +112,7 @@ app.use('/api/signup', limiter);
 app.use('/api/me', limiter);
 
 // Middlewares
-app.use(express.json({ limit: '10kb' })); // limitar tamanho do payload
+app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
@@ -149,7 +151,6 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
-// Sanitiza objetos antes de enviar ao cliente
 function sanitizeRoom(room) {
   return {
     ...room,
@@ -227,7 +228,6 @@ async function loadAllUsers() {
 }
 loadAllUsers();
 
-// Sala inicial
 rooms.set('lounge', createRoom('lounge', 'Lounge Sonora', 'Sistema'));
 console.log('✅ Sala inicial "lounge" criada.');
 
@@ -361,7 +361,6 @@ function updateMostVoted(room, track) {
 app.post('/api/signup', async (req, res) => {
   try {
     let { nome, email, senha, estilos } = req.body;
-    // Validação e sanitização
     nome = (nome || '').trim().slice(0, 60);
     email = (email || '').trim().toLowerCase().slice(0, 120);
     senha = (senha || '').trim();
@@ -498,7 +497,7 @@ app.post('/api/rooms', (req, res) => {
     let { name, adminName, color } = req.body;
     name = (name || '').trim().slice(0, 40);
     if (!name || name.length < 2) return res.status(400).json({ error: 'Nome inválido' });
-    const slug = escapeHtml(name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36));
+    const slug = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36);
     if (rooms.has(slug)) return res.status(400).json({ error: 'Sala já existe' });
     const room = createRoom(slug, name, adminName || 'Anônimo');
     if (color) room.color = color;
@@ -599,7 +598,7 @@ app.post('/api/update-avatar', async (req, res) => {
   res.json({ success: true });
 });
 
-// ===== ADMIN ROTAS (com verificação extra) =====
+// ===== ADMIN ROTAS =====
 function isAdmin(email) {
   return adminEmails.has(email);
 }
