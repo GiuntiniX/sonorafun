@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
 
-// ===== PROTEÇÃO GLOBAL =====
+// ===== PROTEÇÃO GLOBAL PARA O SERVIDOR NUNCA CAIR =====
 process.on('uncaughtException', (err) => {
   console.error('🚨 Erro não capturado (CRASH):', err);
 });
@@ -24,14 +24,7 @@ try {
   console.log('🔥 Firebase conectado!');
 } catch (e) {
   console.error('⚠️ Erro ao conectar Firebase:', e.message);
-  process.exit(1);
 }
-
-if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-  console.error('❌ FIREBASE_SERVICE_ACCOUNT_KEY não definida. O servidor não pode funcionar.');
-  process.exit(1);
-}
-console.log('🔑 Firestore configurado com a coleção "users".');
 
 const db = admin.firestore();
 
@@ -45,6 +38,7 @@ app.use(cookieParser());
 
 // ========== CONFIG ==========
 const colors = ['#f59e0b', '#3b82f6', '#ef4444', '#22c55e', '#a855f7', '#ec4899', '#06b6d4', '#f97316', '#8b5cf6', '#14b8a6'];
+const adminEmails = new Set(['admin@sonora.com']);
 const settings = { maxQueue: 20, cooldown: 30, maxDuration: 600, maxListeners: 20 };
 const DISLIKE_THRESHOLD = 10;
 const MAX_SONGS_PER_USER = 3;
@@ -54,7 +48,7 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
 
 // ========== ESTADO EM MEMÓRIA ==========
 const users = new Map();
-const sessions = new Map(); // sessionToken -> email
+const sessions = new Map();
 const userFavorites = new Map();
 const userPoints = new Map();
 const userThemes = new Map();
@@ -117,37 +111,10 @@ async function setPointsInFirestore(email, data) {
   try { await db.collection('points').doc(email).set(data); } catch (e) {}
 }
 
-// ===== ADMIN PERSISTENTE =====
-async function loadAdmins() {
-  try {
-    const snapshot = await db.collection('admins').get();
-    const adminSet = new Set();
-    snapshot.forEach(doc => adminSet.add(doc.id));
-    return adminSet;
-  } catch (e) { return new Set(); }
-}
-let adminEmails = new Set();
-(async () => { adminEmails = await loadAdmins(); })();
-
-async function isAdmin(email) {
-  if (!email) return false;
-  if (adminEmails.has(email)) return true;
-  const user = await getUserFromFirestore(email);
-  return user && user.isAdmin === true;
-}
-
-async function promoteAdmin(email) {
-  adminEmails.add(email);
-  try { await db.collection('admins').doc(email).set({ email }); } catch (e) {}
-  const user = await getUserFromFirestore(email);
-  if (user) { user.isAdmin = true; await setUserInFirestore(email, user); }
-}
-
-// ========== CARREGAR USUÁRIOS ==========
 async function loadAllUsers() {
   try {
     const snapshot = await db.collection('users').get();
-    snapshot.forEach(doc => { users.set(doc.id, doc.data()); });
+    snapshot.forEach(doc => { users.set(doc.data().email, doc.data()); });
     console.log(`✅ ${users.size} usuários carregados do Firestore.`);
   } catch (e) {}
 }
@@ -201,11 +168,6 @@ function addSystemMsg(slug, text) {
   if (room.chatHistory.length > 300) room.chatHistory.shift();
   io.to(slug).emit('chat', msg);
 }
-
-function generateItemId() {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
-}
-
 function autoShuffle(room) {
   if (!room || room.queue.length <= 1) return;
   const current = room.queue[room.currentIndex];
@@ -220,13 +182,12 @@ function autoShuffle(room) {
   const votes = getRoomVotes(room.slug);
   const newVotes = {};
   room.queue.forEach((track, idx) => {
-    const oldIndex = room.queue.findIndex(t => t._id === track._id);
+    const oldIndex = room.queue.findIndex(t => t.id === track.id);
     if (votes[oldIndex] !== undefined) newVotes[idx] = votes[oldIndex];
   });
   roomVotes.set(room.slug, newVotes);
   broadcastState(room.slug);
 }
-
 function advanceQueue(slug) {
   const room = rooms.get(slug);
   if (!room || !room.isPlaying || room.queue.length === 0) {
@@ -274,16 +235,9 @@ function advanceQueue(slug) {
   }
   return true;
 }
-
 async function startRadio(slug) {
   const room = rooms.get(slug);
   if (!room || !room.radioMode) return;
-  if (!YOUTUBE_API_KEY) {
-    addSystemMsg(slug, '⚠️ API Key do YouTube não configurada. Rádio desativado.');
-    room.isPlaying = false;
-    broadcastState(slug);
-    return;
-  }
   try {
     let query = room.radioGenre || 'pop';
     if (room.history.length > 0) { const last = room.history[room.history.length - 1]; if (last && last.title) query = last.title + ' ' + (last.artist || ''); }
@@ -291,19 +245,11 @@ async function startRadio(slug) {
     const response = await fetch(url);
     if (!response.ok) throw new Error('Erro na busca');
     const data = await response.json();
-    const items = data.items.map(item => ({ 
-      _id: generateItemId(),
-      id: item.id.videoId, 
-      title: item.snippet.title, 
-      artist: item.snippet.channelTitle, 
-      duration: null,
-      dj: '🎧 Rádio'
-    }));
-    for (const song of items) { if (room.queue.length >= settings.maxQueue) break; room.queue.push(song); }
+    const items = data.items.map(item => ({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, duration: null }));
+    for (const song of items) { if (room.queue.length >= settings.maxQueue) break; song.dj = '🎧 Rádio'; room.queue.push(song); }
     if (room.queue.length > 0) { room.isPlaying = true; room.currentIndex = 0; room.startedAt = Date.now(); room.lastAdvanceAt = Date.now(); const next = room.queue[0]; addSystemMsg(slug, `📻 Rádio automático: ▶ ${next.title} — ${next.artist}`); broadcastState(slug); }
   } catch (e) { console.error('Erro no modo rádio:', e.message); addSystemMsg(slug, '⚠️ Erro ao buscar músicas para o rádio.'); room.isPlaying = false; broadcastState(slug); }
 }
-
 setInterval(() => {
   for (const [slug, room] of rooms) {
     if (!room.isPlaying || room.queue.length === 0) continue;
@@ -314,7 +260,6 @@ setInterval(() => {
     if (pos >= duration - 2) advanceQueue(slug);
   }
 }, 2000);
-
 function updateMostVoted(room, track) {
   const upVotes = room.votes?.up || 0;
   if (upVotes > 0) {
@@ -324,20 +269,9 @@ function updateMostVoted(room, track) {
     if (room.mostVoted.length > 20) room.mostVoted.pop();
   }
 }
-
 async function sendDiscordWebhook(webhookUrl, message) {
   if (!webhookUrl) return;
   try { await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: message }) }); } catch (e) {}
-}
-
-// ========== MIDDLEWARE DE AUTENTICAÇÃO ==========
-async function authenticate(req, res, next) {
-  const token = req.cookies.sessionToken;
-  if (!token) return res.status(401).json({ error: 'Não autenticado' });
-  const email = sessions.get(token);
-  if (!email) return res.status(401).json({ error: 'Sessão inválida' });
-  req.userEmail = email;
-  next();
 }
 
 // ========== ROTAS ==========
@@ -363,62 +297,24 @@ app.post('/api/signup', async (req, res) => {
   } catch (e) { console.error('Erro no signup:', e.message); res.status(500).json({ error: 'Erro ao salvar dados no Firestore: ' + e.message }); }
 });
 
-// ROTA DE LOGIN CORRIGIDA (cria usuário automaticamente se não existir)
 app.post('/api/login', async (req, res) => {
-  const { email, senha } = req.body;
+  const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Preencha e-mail' });
 
   try {
-    let userData = await getUserFromFirestore(email);
-    
-    // Se não existir, cria um registro básico automaticamente
-    if (!userData) {
-      console.log(`⚠️ Usuário ${email} autenticado mas não encontrado no Firestore. Criando...`);
-      const nome = email.split('@')[0] || 'Usuário';
-      const estilos = ['pop'];
-      const newUser = { 
-        nome, 
-        email, 
-        estilos, 
-        avatar: '🎸', 
-        criadoEm: new Date(), 
-        theme: 'dark',
-        fontSize: 16,
-        colorblind: false
-      };
-      await setUserInFirestore(email, newUser);
-      users.set(email, newUser);
-      await setPointsInFirestore(email, { points: 0, badges: [] });
-      userPoints.set(email, { points: 0, badges: [] });
-      await setFavoritesInFirestore(email, []);
-      userFavorites.set(email, []);
-      userData = newUser;
-    }
+    const userDoc = await db.collection('users').doc(email).get();
+    if (!userDoc.exists) return res.status(401).json({ error: 'Usuário não encontrado' });
+
+    const userData = userDoc.data();
+    if (!users.has(email)) users.set(email, userData);
 
     const token = crypto.randomBytes(64).toString('hex');
     sessions.set(token, email);
-    res.cookie('sessionToken', token, { 
-      httpOnly: true, 
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
-      sameSite: 'lax', 
-      path: '/' 
-    });
+    res.cookie('sessionToken', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax', path: '/' });
 
     const points = await getPointsFromFirestore(email);
-    const isAdmin = await isAdmin(email);
-    res.json({ 
-      success: true, 
-      user: { 
-        ...userData, 
-        points: points.points, 
-        badges: points.badges, 
-        isAdmin 
-      } 
-    });
-  } catch (e) {
-    console.error('Erro no login:', e.message);
-    res.status(500).json({ error: 'Erro interno ao fazer login. Tente novamente.' });
-  }
+    res.json({ success: true, user: { ...userData, points: points.points, badges: points.badges } });
+  } catch (e) { res.status(401).json({ error: 'Credenciais inválidas' }); }
 });
 
 app.post('/api/logout', (req, res) => {
@@ -428,13 +324,15 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/me', authenticate, async (req, res) => {
-  const email = req.userEmail;
+app.get('/api/me', async (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email) return res.status(401).json({ error: 'Sessão inválida' });
   const userData = users.get(email) || await getUserFromFirestore(email);
-  if (!userData) { sessions.delete(req.cookies.sessionToken); return res.status(401).json({ error: 'Usuário não encontrado' }); }
+  if (!userData) { sessions.delete(token); return res.status(401).json({ error: 'Usuário não encontrado' }); }
   const points = userPoints.get(email) || await getPointsFromFirestore(email);
-  const isAdmin = await isAdmin(email);
-  res.json({ success: true, user: { ...userData, points: points.points, badges: points.badges, isAdmin } });
+  res.json({ success: true, user: { ...userData, points: points.points, badges: points.badges } });
 });
 
 // ========== SALAS ==========
@@ -451,7 +349,7 @@ app.get('/api/rooms', (req, res) => {
   } catch (e) { console.error('Erro na rota /api/rooms:', e.message); res.status(500).json({ error: 'Erro interno ao listar salas' }); }
 });
 
-app.post('/api/rooms', authenticate, (req, res) => {
+app.post('/api/rooms', (req, res) => {
   const { name, adminName, color } = req.body;
   if (!name || name.trim().length < 2) return res.status(400).json({ error: 'Nome inválido' });
   const slug = name.trim().toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36);
@@ -481,21 +379,21 @@ app.get('/api/room/:slug/stats', (req, res) => {
   res.json({ mostVoted: room.mostVoted.slice(0, 10) });
 });
 
-app.post('/api/room/:slug/invite', authenticate, (req, res) => {
+app.post('/api/room/:slug/invite', (req, res) => {
   const room = rooms.get(req.params.slug);
   if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
   room.inviteCount = (room.inviteCount || 0) + 1;
   res.json({ success: true });
 });
 
-app.post('/api/room/:slug/webhook', authenticate, (req, res) => {
+app.post('/api/room/:slug/webhook', (req, res) => {
   const room = rooms.get(req.params.slug);
   if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
   room.discordWebhook = req.body.webhookUrl || null;
   res.json({ success: true });
 });
 
-app.post('/api/room/:slug/event', authenticate, (req, res) => {
+app.post('/api/room/:slug/event', (req, res) => {
   const room = rooms.get(req.params.slug);
   if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
   room.eventStartTime = req.body.startTime || null;
@@ -504,14 +402,20 @@ app.post('/api/room/:slug/event', authenticate, (req, res) => {
 });
 
 // ========== FAVORITOS ==========
-app.get('/api/favorites', authenticate, async (req, res) => {
-  const email = req.userEmail;
+app.get('/api/favorites', async (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email) return res.status(401).json({ error: 'Sessão inválida' });
   const favs = await getFavoritesFromFirestore(email);
   res.json(favs);
 });
 
-app.post('/api/favorites', authenticate, async (req, res) => {
-  const email = req.userEmail;
+app.post('/api/favorites', async (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email) return res.status(401).json({ error: 'Sessão inválida' });
   const { videoId, title, artist } = req.body;
   if (!videoId) return res.status(400).json({ error: 'ID do vídeo necessário' });
   let favs = await getFavoritesFromFirestore(email);
@@ -523,8 +427,11 @@ app.post('/api/favorites', authenticate, async (req, res) => {
   res.json({ success: true });
 });
 
-app.delete('/api/favorites/:id', authenticate, async (req, res) => {
-  const email = req.userEmail;
+app.delete('/api/favorites/:id', async (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email) return res.status(401).json({ error: 'Sessão inválida' });
   const id = req.params.id;
   let favs = await getFavoritesFromFirestore(email);
   favs = favs.filter(f => f.id !== id);
@@ -534,8 +441,11 @@ app.delete('/api/favorites/:id', authenticate, async (req, res) => {
 });
 
 // ========== AVATAR ==========
-app.post('/api/update-avatar', authenticate, async (req, res) => {
-  const email = req.userEmail;
+app.post('/api/update-avatar', async (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email) return res.status(401).json({ error: 'Sessão inválida' });
   const { avatar } = req.body;
   if (!avatar) return res.status(400).json({ error: 'Avatar necessário' });
   const userData = users.get(email) || await getUserFromFirestore(email);
@@ -547,8 +457,7 @@ app.post('/api/update-avatar', authenticate, async (req, res) => {
 });
 
 // ========== ADMIN ROTAS ==========
-app.get('/api/admin/stats', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.get('/api/admin/stats', async (req, res) => {
   try {
     const snapshot = await db.collection('users').get();
     const totalUsers = snapshot.size;
@@ -558,8 +467,7 @@ app.get('/api/admin/stats', authenticate, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/admin/users', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.get('/api/admin/users', async (req, res) => {
   try {
     const snapshot = await db.collection('users').get();
     const usersList = [];
@@ -571,16 +479,14 @@ app.get('/api/admin/users', authenticate, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/admin/promote', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.post('/api/admin/promote', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email necessário' });
-  await promoteAdmin(email);
+  adminEmails.add(email);
   res.json({ success: true });
 });
 
-app.post('/api/admin/delete-user', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.post('/api/admin/delete-user', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email necessário' });
   try {
@@ -594,8 +500,7 @@ app.post('/api/admin/delete-user', authenticate, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/admin/kick-user', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.post('/api/admin/kick-user', (req, res) => {
   const { email, roomSlug } = req.body;
   if (!email || !roomSlug) return res.status(400).json({ error: 'Dados incompletos' });
   const room = rooms.get(roomSlug);
@@ -616,8 +521,7 @@ app.post('/api/admin/kick-user', authenticate, async (req, res) => {
   });
 });
 
-app.post('/api/admin/ban-user', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.post('/api/admin/ban-user', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email necessário' });
   const userData = await getUserFromFirestore(email);
@@ -635,8 +539,7 @@ app.post('/api/admin/ban-user', authenticate, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/admin/remove-song', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.post('/api/admin/remove-song', (req, res) => {
   const { roomSlug, index } = req.body;
   if (roomSlug === undefined || index === undefined) return res.status(400).json({ error: 'Dados incompletos' });
   const room = rooms.get(roomSlug);
@@ -653,8 +556,7 @@ app.post('/api/admin/remove-song', authenticate, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/admin/clear-all-chats', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.post('/api/admin/clear-all-chats', (req, res) => {
   for (const [slug, room] of rooms) {
     room.chatHistory = [];
     roomLikes.set(slug, {});
@@ -663,8 +565,7 @@ app.post('/api/admin/clear-all-chats', authenticate, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/admin/clear-all-rooms', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.post('/api/admin/clear-all-rooms', (req, res) => {
   for (const [slug, room] of rooms) {
     if (slug === 'lounge') continue;
     io.to(slug).emit('roomClosed', 'Sala removida pelo admin.');
@@ -676,8 +577,7 @@ app.post('/api/admin/clear-all-rooms', authenticate, async (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/admin/export-data', authenticate, async (req, res) => {
-  if (!(await isAdmin(req.userEmail))) return res.status(403).json({ error: 'Acesso negado' });
+app.get('/api/admin/export-data', (req, res) => {
   const data = {
     users: Array.from(users.values()),
     rooms: Array.from(rooms.values()).map(r => ({ ...r, lastAddTime: undefined, skipVotes: undefined })),
@@ -692,9 +592,6 @@ app.get('/api/admin/export-data', authenticate, async (req, res) => {
 app.get('/api/search-youtube', async (req, res) => {
   const query = req.query.q;
   if (!query || query.length < 2) return res.json({ items: [] });
-  if (!YOUTUBE_API_KEY) {
-    return res.status(503).json({ error: 'API Key do YouTube não configurada', items: [] });
-  }
   try {
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q=${encodeURIComponent(query)}&key=${YOUTUBE_API_KEY}`;
     const response = await fetch(url);
@@ -705,19 +602,12 @@ app.get('/api/search-youtube', async (req, res) => {
   } catch (e) { console.error('Erro na busca do YouTube:', e.message); res.status(500).json({ error: 'Erro ao buscar vídeos: ' + e.message, items: [] }); }
 });
 
-function fetchUrl(url, maxSize = 4 * 1024 * 1024) {
+function fetchUrl(url) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 8000 }, (res) => {
       if (res.statusCode !== 200) { res.resume(); return reject(new Error('HTTP ' + res.statusCode)); }
-      let data = ''; let size = 0;
-      res.setEncoding('utf8');
-      res.on('data', chunk => {
-        data += chunk;
-        size += Buffer.byteLength(chunk);
-        if (size > maxSize) {
-          req.destroy(new Error('Response too large'));
-        }
-      });
+      let data = ''; res.setEncoding('utf8');
+      res.on('data', chunk => { data += chunk; if (data.length > 4e6) req.destroy(); });
       res.on('end', () => resolve(data));
     });
     req.on('timeout', () => req.destroy(new Error('timeout')));
@@ -754,7 +644,7 @@ io.on('connection', (socket) => {
   let currentRoom = null;
   let userEmail = null;
 
-  socket.on('joinRoom', async ({ slug, name, avatar }) => {
+  socket.on('joinRoom', ({ slug, name, avatar }) => {
     try {
       const room = rooms.get(slug);
       if (!room) { socket.emit('error', 'Sala não encontrada'); return; }
@@ -781,7 +671,7 @@ io.on('connection', (socket) => {
       const email = tokenMatch ? sessions.get(tokenMatch[1]) : null;
       userEmail = email;
       socket.userEmail = email;
-      const isGlobalAdmin = email ? await isAdmin(email) : false;
+      const isGlobalAdmin = adminEmails.has(email);
       const isRoomAdmin = room.admin === name;
       socket.isAdmin = isGlobalAdmin || isRoomAdmin;
       if (isGlobalAdmin && !room.admin) room.admin = name;
@@ -832,7 +722,7 @@ io.on('connection', (socket) => {
     } catch (e) { console.error('Erro no chat:', e.message); }
   });
 
-  async function handleCommand(socket, cmd, args, room) {
+  function handleCommand(socket, cmd, args, room) {
     const email = socket.userEmail;
     let reply = '';
     switch(cmd) {
@@ -887,13 +777,12 @@ io.on('connection', (socket) => {
     for (const [id, s] of io.sockets.sockets) { if (s.userEmail === email) s.emit('userPoints', p); }
   }
 
-  socket.on('voteSkip', async () => {
+  socket.on('voteSkip', () => {
     try {
       if (!currentRoom) return;
       const room = rooms.get(currentRoom);
       if (room.queue.length === 0) return;
-      const isAdmin = socket.isAdmin || (socket.userEmail && await isAdmin(socket.userEmail));
-      if (isAdmin) { advanceQueue(currentRoom); addSystemMsg(currentRoom, `⏭️ ${socket.userName} pulou a música (admin)`); return; }
+      if (socket.userName === room.admin || adminEmails.has(socket.userEmail)) { advanceQueue(currentRoom); addSystemMsg(currentRoom, `⏭️ ${socket.userName} pulou a música (admin)`); return; }
       if (room.skipVotes.has(socket.userName)) { socket.emit('error', 'Você já votou para pular.'); return; }
       room.skipVotes.add(socket.userName);
       const totalListeners = room.listenerCount || 1;
@@ -917,7 +806,6 @@ io.on('connection', (socket) => {
       const isQueueFull = room.queue.length >= settings.maxQueue;
       if (isQueueFull) {
         if (room.waitingQueue.length >= settings.maxQueue) { socket.emit('error', `Fila de espera cheia (${settings.maxQueue})`); return; }
-        song._id = generateItemId();
         song.dj = socket.userName; room.waitingQueue.push(song); room.lastAddTime.set(socket.userName, now); addPoints(socket.userEmail, 1);
         io.to(currentRoom).emit('playSound', 'waiting');
         addSystemMsg(currentRoom, `⏳ "${song.title}" entrou na fila de espera (${room.waitingQueue.length} músicas aguardando)`);
@@ -925,7 +813,6 @@ io.on('connection', (socket) => {
         return;
       }
       if (song.duration && song.duration > settings.maxDuration) { socket.emit('error', `⛔ Vídeo muito longo! Duração: ${Math.floor(song.duration / 60)} min. Limite: ${settings.maxDuration / 60} min.`); return; }
-      song._id = generateItemId();
       song.dj = socket.userName; room.queue.push(song); room.lastAddTime.set(socket.userName, now); addPoints(socket.userEmail, 2);
       room.totalSongsAdded = (room.totalSongsAdded || 0) + 1;
       if (!room.isPlaying && room.queue.length === 1) { room.isPlaying = true; room.currentIndex = 0; room.startedAt = Date.now(); room.lastAdvanceAt = Date.now(); addSystemMsg(currentRoom, `▶ ${song.title} — ${song.artist}`); }
@@ -974,19 +861,19 @@ io.on('connection', (socket) => {
     } catch (e) { console.error('Erro no videoDuration:', e.message); }
   });
 
-  socket.on('reorderQueue', async (newOrder) => {
+  socket.on('reorderQueue', (newOrder) => {
     try {
       if (!currentRoom) { socket.emit('error', 'Você não está em uma sala'); return; }
-      const isAdmin = socket.isAdmin || (socket.userEmail && await isAdmin(socket.userEmail));
-      if (!isAdmin) { socket.emit('error', 'Apenas admin pode reordenar'); return; }
+      const isGlobalAdmin = userEmail && adminEmails.has(userEmail);
+      if (!isGlobalAdmin && !socket.isAdmin) { socket.emit('error', 'Apenas admin pode reordenar'); return; }
       const room = rooms.get(currentRoom);
       if (!room || room.queue.length === 0) return;
-      const currentTrack = room.queue[room.currentIndex]; const currentId = currentTrack ? currentTrack._id : null;
+      const currentTrack = room.queue[room.currentIndex]; const currentId = currentTrack ? currentTrack.id : null;
       const newQueue = [];
-      for (const id of newOrder) { const track = room.queue.find(t => t._id === id); if (track) newQueue.push(track); }
+      for (const id of newOrder) { const track = room.queue.find(t => t.id === id); if (track) newQueue.push(track); }
       if (newQueue.length === room.queue.length) {
         room.queue = newQueue;
-        const newIndex = room.queue.findIndex(t => t._id === currentId);
+        const newIndex = room.queue.findIndex(t => t.id === currentId);
         room.currentIndex = newIndex !== -1 ? newIndex : 0;
         const votes = getRoomVotes(currentRoom); const newVotes = {};
         room.queue.forEach((track, i) => { const oldIndex = room.queue.indexOf(track); if (votes[oldIndex]) newVotes[i] = votes[oldIndex]; });
