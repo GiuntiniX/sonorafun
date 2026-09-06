@@ -1,20 +1,494 @@
-<script>
-    // ============================================================
-    // JAVASCRIPT COMPLETO - SONORA FAN (CORRIGIDO)
-    // ============================================================
-    const MAX_SONG_DURATION = 600, DISLIKE_THRESHOLD = 10, COOLDOWN = 30000, MAX_SONGS_PER_USER = 3;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sonora Fan — A melhor Vibe</title>
+  <script src="/socket.io/socket.io.js"></script>
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAF1I-hhlJeiaAWNj6Ze7B6KMP1-iyOBWU",
+      authDomain: "sonorafan-777.firebaseapp.com",
+      databaseURL: "https://sonorafan-777-default-rtdb.firebaseio.com",
+      projectId: "sonorafan-777",
+      storageBucket: "sonorafan-777.firebasestorage.app",
+      messagingSenderId: "790544929713",
+      appId: "1:790544929713:web:aa42cb147b7c4ecfe2a390"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <style>
+    /* ===== ESTILOS COMPLETOS ===== */
+    /* (mantenha o mesmo CSS do arquivo original, não vou repetir para não alongar) */
+    /* O CSS já está correto no seu arquivo, mantenha-o */
+  </style>
+</head>
+<body>
+  <!-- PARTICLES -->
+  <div class="particles">
+    <div class="particle" style="bottom:-10%;left:5%;"></div>
+    <div class="particle" style="bottom:-10%;left:15%;"></div>
+    <div class="particle" style="bottom:-10%;left:25%;"></div>
+    <div class="particle" style="bottom:-10%;left:35%;"></div>
+    <div class="particle" style="bottom:-10%;left:45%;"></div>
+    <div class="particle" style="bottom:-10%;left:55%;"></div>
+    <div class="particle" style="bottom:-10%;left:65%;"></div>
+    <div class="particle" style="bottom:-10%;left:75%;"></div>
+    <div class="particle" style="bottom:-10%;left:85%;"></div>
+    <div class="particle" style="bottom:-10%;left:95%;"></div>
+  </div>
+
+  <!-- LANDING PAGE -->
+  <div class="landing-screen" id="landingScreen">
+    <div class="landing-inner">
+      <div class="landing-nav">
+        <div class="landing-logo">🎸 Sonora <span>Fan</span></div>
+        <div class="landing-nav-actions">
+          <button class="lang-btn active" data-lang="pt" onclick="setLanguage('pt')">PT</button>
+          <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+          <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+          <button class="btn-outline" onclick="showLogin()" data-i18n="hero.cta1">🎤 Entrar na sala</button>
+          <button class="btn-primary" onclick="openSignup()" data-i18n="hero.cta2">✍️ Criar conta</button>
+        </div>
+      </div>
+
+      <div class="landing-hero">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="landing-hero-content">
+          <h1 data-i18n="hero.title">A pista é sua.<br>A trilha sonora é <span>de todo mundo</span>.</h1>
+          <p data-i18n="hero.sub">Entre em uma sala, adicione suas músicas favoritas do YouTube e converse em tempo real com a galera.</p>
+          <div class="landing-hero-ctas">
+            <button class="btn-hero-secondary" onclick="showLogin()" data-i18n="hero.cta1">🎤 Entrar na sala</button>
+            <button class="btn-hero-primary" onclick="openSignup()" data-i18n="hero.cta2">✍️ Criar conta</button>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="landing-features-title" data-i18n="features.title">🎶 Como funciona</h2>
+      <p class="landing-features-sub" data-i18n="features.sub">Tudo o que você precisa para criar a vibe perfeita</p>
+      <div class="landing-features">
+        <div class="landing-feature-card">
+          <span class="icon">🎵</span>
+          <h3 data-i18n="feature1.title">Fila colaborativa</h3>
+          <p data-i18n="feature1.desc">Todo mundo adiciona música do YouTube, a fila toca em sincronia para todos.</p>
+        </div>
+        <div class="landing-feature-card">
+          <span class="icon">💬</span>
+          <h3 data-i18n="feature2.title">Chat ao vivo</h3>
+          <p data-i18n="feature2.desc">Comente as músicas, reaja com emojis e curta as escolhas da galera.</p>
+        </div>
+        <div class="landing-feature-card">
+          <span class="icon">🗳️</span>
+          <h3 data-i18n="feature3.title">Votação democrática</h3>
+          <p data-i18n="feature3.desc">Curta ou dispense músicas da fila. Com 10 votos negativos, a música sai!</p>
+        </div>
+      </div>
+
+      <div class="landing-cta-band">
+        <h2 data-i18n="band.title">Ainda não tem conta? Crie uma agora!</h2>
+        <p data-i18n="band.sub">Cadastre-se e entre nas salas para ouvir música com amigos.</p>
+        <button class="btn-cta" onclick="openSignup()" data-i18n="band.cta">Criar minha conta 🎵</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="logo">🎸</div>
+      <h1>Sonora <span>Fan</span></h1>
+      <p data-i18n="login.sub">Entre com sua conta para acessar as salas.</p>
+      <div class="login-error" id="loginError" data-i18n="login.error">Credenciais inválidas.</div>
+      <input type="email" id="loginEmail" placeholder="E-mail" data-i18n-placeholder="login.email" onkeydown="if(event.key==='Enter') doLogin()">
+      <input type="password" id="loginPassword" placeholder="Senha" data-i18n-placeholder="login.password" onkeydown="if(event.key==='Enter') doLogin()">
+      <button id="loginBtn" onclick="doLogin()" data-i18n="login.btn">Entrar no palco</button>
+      <div class="login-switch"><span data-i18n="login.switch">Não tem conta?</span> <a onclick="openSignup()" data-i18n="login.signup">Cadastre-se</a></div>
+    </div>
+  </div>
+
+  <!-- SIGNUP -->
+  <div class="modal-overlay" id="signupModal">
+    <div class="modal">
+      <h3 data-i18n="signup.title">🎵 Criar conta</h3>
+      <label class="form-label" data-i18n="signup.name">Nome <span class="required">*</span></label>
+      <input type="text" id="signupNome" placeholder="Seu nome" maxlength="60" data-i18n-placeholder="signup.namePlaceholder">
+      <div class="form-error" id="signupNomeError" data-i18n="signup.nameError">Digite seu nome</div>
+      <label class="form-label" data-i18n="signup.email">E-mail <span class="required">*</span></label>
+      <input type="email" id="signupEmail" placeholder="voce@email.com" maxlength="120" data-i18n-placeholder="signup.emailPlaceholder">
+      <div class="form-error" id="signupEmailError" data-i18n="signup.emailError">Digite um e-mail válido</div>
+      <label class="form-label" data-i18n="signup.password">Senha <span class="required">*</span> <span class="hint">(mínimo 6 caracteres)</span></label>
+      <input type="password" id="signupPassword" placeholder="Crie uma senha" maxlength="30" data-i18n-placeholder="signup.passwordPlaceholder">
+      <div class="form-error" id="signupPasswordError" data-i18n="signup.passwordError">Mínimo 6 caracteres</div>
+      <label class="form-label" data-i18n="signup.style">Estilo musical <span class="required">*</span></label>
+      <div class="chip-group" id="signupStyles">
+        <div class="chip" data-style="sertanejo" onclick="toggleChip(this)">Sertanejo</div>
+        <div class="chip" data-style="funk" onclick="toggleChip(this)">Funk</div>
+        <div class="chip" data-style="pagode" onclick="toggleChip(this)">Pagode/Samba</div>
+        <div class="chip" data-style="mpb" onclick="toggleChip(this)">MPB</div>
+        <div class="chip" data-style="rock" onclick="toggleChip(this)">Rock</div>
+        <div class="chip" data-style="pop" onclick="toggleChip(this)">Pop</div>
+        <div class="chip" data-style="eletronica" onclick="toggleChip(this)">Eletrônica</div>
+        <div class="chip" data-style="hiphop" onclick="toggleChip(this)">Hip Hop/Rap</div>
+        <div class="chip" data-style="forro" onclick="toggleChip(this)">Forró</div>
+        <div class="chip" data-style="gospel" onclick="toggleChip(this)">Gospel</div>
+        <div class="chip" data-style="indie" onclick="toggleChip(this)">Indie</div>
+      </div>
+      <div class="form-error" id="signupStylesError" data-i18n="signup.styleError">Escolha pelo menos um estilo</div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeSignup()" data-i18n="signup.cancel">Cancelar</button>
+        <button class="btn-primary" onclick="submitSignup()" data-i18n="signup.submit">Criar conta 🎶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div class="modal-overlay" id="adminPanel">
+    <div class="modal admin-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+        <h3 style="font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🎛️ Painel Admin</h3>
+        <button onclick="closeAdmin()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div class="tab-bar">
+        <button class="active" data-tab="tab-users" onclick="switchAdminTab('tab-users')">👥 Usuários</button>
+        <button data-tab="tab-queues" onclick="switchAdminTab('tab-queues')">🎵 Filas</button>
+        <button data-tab="tab-stats" onclick="switchAdminTab('tab-stats')">📊 Estatísticas</button>
+        <button data-tab="tab-settings" onclick="switchAdminTab('tab-settings')">⚙️ Configurações</button>
+      </div>
+      <div id="tab-users" class="admin-tab active">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-weight:700;font-size:13px;">👥 Usuários</span>
+          <span style="font-size:11px;color:var(--text-muted);" id="adminUserCount">0</span>
+        </div>
+        <div id="adminUserList" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
+          <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;" data-i18n="admin.loadingUsers">Carregando...</div>
+        </div>
+      </div>
+      <div id="tab-queues" class="admin-tab">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-weight:700;font-size:13px;">🎵 Gerenciar Filas</span>
+          <button onclick="loadAdminQueues()" style="background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-secondary);padding:2px 8px;font-size:11px;cursor:pointer;font-family:inherit;" data-i18n="admin.refresh">🔄 Atualizar</button>
+        </div>
+        <div id="adminQueueList" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+          <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;" data-i18n="admin.loadingQueues">Carregando salas...</div>
+        </div>
+      </div>
+      <div id="tab-stats" class="admin-tab">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:24px;font-weight:800;color:var(--text);" id="adminUsers">0</div>
+            <div style="font-size:11px;color:var(--text-muted);">Usuários</div>
+          </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:24px;font-weight:800;color:var(--text);" id="adminRooms">0</div>
+            <div style="font-size:11px;color:var(--text-muted);">Salas</div>
+          </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:24px;font-weight:800;color:var(--text);" id="adminOnline">0</div>
+            <div style="font-size:11px;color:var(--text-muted);">Online</div>
+          </div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px;">🏆 Músicas mais votadas (últimos 7 dias)</div>
+          <div id="adminTopSongs" style="font-size:13px;color:var(--text-secondary);">Carregando...</div>
+        </div>
+      </div>
+      <div id="tab-settings" class="admin-tab">
+        <div class="admin-action-grid">
+          <button onclick="adminClearChats()" data-i18n="admin.clearChats">🗑️ Limpar Chats</button>
+          <button onclick="adminClearRooms()" data-i18n="admin.clearRooms">🧹 Limpar Salas</button>
+          <button onclick="adminExport()" data-i18n="admin.export">📥 Exportar</button>
+          <button onclick="adminBroadcast()" data-i18n="admin.broadcast">📢 Mensagem</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAVORITOS -->
+  <div class="modal-overlay" id="favoritesModal">
+    <div class="modal">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
+        <h3 style="font-size:20px;font-weight:800;" data-i18n="favorites.title">⭐ Minhas Favoritas</h3>
+        <button onclick="closeFavorites()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div id="favoritesList"><div style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px;" data-i18n="favorites.loading">Carregando favoritos...</div></div>
+    </div>
+  </div>
+
+  <!-- AVATAR -->
+  <div class="modal-overlay" id="avatarModal">
+    <div class="modal">
+      <h3 data-i18n="avatar.title">🎨 Escolha seu avatar</h3>
+      <div class="avatar-grid" id="avatarGrid">
+        <div class="avatar-option" data-avatar="🎸">🎸</div>
+        <div class="avatar-option" data-avatar="🎤">🎤</div>
+        <div class="avatar-option" data-avatar="🎧">🎧</div>
+        <div class="avatar-option" data-avatar="🎹">🎹</div>
+        <div class="avatar-option" data-avatar="🎺">🎺</div>
+        <div class="avatar-option" data-avatar="🎷">🎷</div>
+        <div class="avatar-option" data-avatar="🥁">🥁</div>
+        <div class="avatar-option" data-avatar="🎵">🎵</div>
+        <div class="avatar-option" data-avatar="🎶">🎶</div>
+        <div class="avatar-option" data-avatar="🎙️">🎙️</div>
+        <div class="avatar-option" data-avatar="👨‍🎤">👨‍🎤</div>
+        <div class="avatar-option" data-avatar="👩‍🎤">👩‍🎤</div>
+        <div class="avatar-option" data-avatar="🧑‍🎤">🧑‍🎤</div>
+        <div class="avatar-option" data-avatar="🤘">🤘</div>
+        <div class="avatar-option" data-avatar="🕺">🕺</div>
+        <div class="avatar-option" data-avatar="💃">💃</div>
+        <div class="avatar-option" data-avatar="🌈">🌈</div>
+        <div class="avatar-option" data-avatar="⭐">⭐</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeAvatarModal()" data-i18n="avatar.cancel">Cancelar</button>
+        <button class="btn-primary" onclick="saveAvatar()" data-i18n="avatar.save">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div class="screen" id="screen-lobby">
+    <div class="app">
+      <div class="header">
+        <div class="header-left"><h1>🎸 Sonora <span>Fan</span></h1></div>
+        <div class="header-right">
+          <div class="user-info" id="userInfo">
+            <span id="userAvatar" style="cursor:pointer;" onclick="openAvatarModal()">🎸</span>
+            <span id="userDisplayName">Usuário</span>
+            <span id="userPointsBadge" style="font-size:11px;color:var(--accent);margin-left:4px;"></span>
+          </div>
+          <button class="admin-toggle-btn" onclick="toggleAdmin()" title="Admin" id="adminBtn" style="display:none;">🎛️</button>
+          <button class="theme-toggle-btn" onclick="toggleTheme()" title="Trocar Tema" id="themeBtn">🌙</button>
+          <div class="lang-selector">
+            <button class="lang-btn active" data-lang="pt" onclick="setLanguage('pt')">PT</button>
+            <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+          </div>
+          <button class="logout-btn" onclick="doLogout()" data-i18n="logout">Sair</button>
+        </div>
+      </div>
+      <div class="lobby">
+        <div class="lobby-top">
+          <h2 data-i18n="lobby.title">Salas disponíveis</h2>
+          <div class="lobby-actions">
+            <button onclick="showCreateRoom()" data-i18n="lobby.newRoom">+ Nova sala</button>
+            <button onclick="joinRandomRoom()" data-i18n="lobby.random">🎲 Sala aleatória</button>
+          </div>
+        </div>
+        <div class="room-grid" id="roomGrid">
+          <div class="empty-state"><div class="icon">🎵</div><p data-i18n="lobby.loading">Carregando salas...</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROOM -->
+  <div class="screen" id="screen-room">
+    <div class="app">
+      <div class="header">
+        <div class="header-left">
+          <button onclick="leaveRoom()" style="background:transparent;border:1px solid var(--border);padding:6px 14px;border-radius:8px;color:var(--text);cursor:pointer;font-family:inherit;font-size:13px;" data-i18n="room.back">← Voltar</button>
+          <h1 id="roomTitle">Sala</h1>
+        </div>
+        <div class="header-right">
+          <button class="action-btn" onclick="copyInviteLink()" title="Convidar amigos">🔗</button>
+          <button class="admin-toggle-btn" onclick="toggleAdmin()" title="Admin" id="adminBtnRoom" style="display:none;">🎛️</button>
+          <button class="theme-toggle-btn" onclick="toggleTheme()" title="Trocar Tema" id="themeBtnRoom">🌙</button>
+          <button class="action-btn" onclick="toggleFavorites()" title="Favoritos" style="border-color:var(--accent2);">⭐</button>
+          <span id="adminBadge" class="admin-badge hidden">Admin</span>
+        </div>
+      </div>
+
+      <div class="room-layout" id="roomLayout">
+        <div class="queue-column">
+          <div class="queue-header">
+            <span>🎵 Fila</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="count" id="queueCount">0 músicas</span>
+              <button onclick="copyQueueIds()" style="background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);padding:2px 6px;font-size:10px;cursor:pointer;">📋</button>
+            </div>
+          </div>
+          <div class="queue-list" id="queueList">
+            <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0;" data-i18n="queue.empty">Nenhuma música na fila</div>
+          </div>
+          <div id="waitingQueueLabel" class="waiting-queue-label hidden">⏳ Fila de espera:</div>
+          <div class="queue-list" id="waitingQueueList" style="max-height:120px;overflow-y:auto;padding:4px 12px 12px;border-top:1px solid var(--border);"></div>
+        </div>
+
+        <div class="player-column">
+          <div class="player-section">
+            <div class="player-header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);">
+              <span class="now-playing-label" style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-weight:700;" data-i18n="player.now">Tocando agora</span>
+              <span class="live-indicator" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--danger);font-weight:700;text-transform:uppercase;letter-spacing:1px;">
+                <span class="live-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--danger);animation:pulse 1.5s infinite;"></span><span data-i18n="player.live">Ao vivo</span>
+              </span>
+            </div>
+            <div id="youtube-player">
+              <div class="buffering-overlay" id="bufferingOverlay"><div class="spinner"></div></div>
+            </div>
+            <div class="player-info">
+              <div class="cover" id="trackCover">🎵</div>
+              <div class="track-info">
+                <div class="track-title" id="trackTitle" data-i18n="player.noTrack">Nenhuma música</div>
+                <div class="track-artist" id="trackArtist" data-i18n="player.addTrack">Adicione uma música</div>
+                <div class="track-dj" id="trackDj"></div>
+                <div class="track-actions">
+                  <button onclick="favoriteCurrent()" id="favCurrentBtn" data-i18n="player.fav">⭐ Favoritar</button>
+                  <button onclick="voteSkip()" id="skipBtn" title="Votar para pular" data-i18n="player.skip">⏭️ Pular</button>
+                  <button onclick="adminRemoveCurrentSong()" id="adminRemoveBtn" style="display:none;" title="Remover música atual (Admin)">🗑️ Remover</button>
+                </div>
+              </div>
+            </div>
+            <div class="progress-section">
+              <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+              <div class="progress-time"><span id="currentTime">0:00</span><span id="totalTime">0:00</span></div>
+              <div class="volume-control">
+                <span style="font-size:13px;">🔊</span>
+                <input type="range" id="volumeSlider" min="0" max="100" value="80" oninput="setVolume(this.value)">
+                <span id="volumeValue" style="font-size:11px;color:var(--text-muted);min-width:28px;text-align:right;">80%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="next-track" id="nextTrack" style="display:none;">
+            <span class="label" data-i18n="next.label">A seguir</span>
+            <div class="thumb" id="nextThumb"></div>
+            <div class="info"><div class="title" id="nextTitle">-</div><div class="artist" id="nextArtist">-</div></div>
+          </div>
+
+          <div class="add-song-area">
+            <div class="add-song">
+              <input type="text" id="songUrl" placeholder="Buscar no YouTube ou colar link..." data-i18n-placeholder="add.placeholder" oninput="handleSearchInput(this.value)" onkeydown="if(event.key==='Enter') addSong()">
+              <button id="addBtn" onclick="addSong()" data-i18n="add.btn">Adicionar</button>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+            <div class="song-preview hidden" id="songPreview">
+              <div class="song-preview-thumb" id="previewThumb">🎵</div>
+              <div class="song-preview-info">
+                <div class="song-preview-title" id="previewTitle">Prévia</div>
+                <div class="song-preview-artist" id="previewArtist">Cole um link</div>
+                <div class="song-preview-status" id="previewStatus"></div>
+              </div>
+              <div class="song-preview-actions" id="previewActions">
+                <button class="song-preview-confirm" onclick="confirmAdd()">✓</button>
+                <button class="song-preview-fav" onclick="favPreview()">⭐</button>
+                <button class="song-preview-cancel" onclick="clearPreview()">✕</button>
+              </div>
+            </div>
+            <div class="cooldown-text hidden" id="cooldownText"></div>
+          </div>
+        </div>
+
+        <div class="chat-column">
+          <div class="users-panel">
+            <div class="user-count"><span class="icon">👥</span> <span id="userCount">0</span> <span data-i18n="chat.listeners">ouvintes</span></div>
+          </div>
+          <div class="chat-panel">
+            <div class="chat-messages" id="chatMessages">
+              <div class="chat-messages-inner" id="chatMessagesInner"></div>
+            </div>
+            <div class="chat-input-bar">
+              <button class="emoji-btn" onclick="toggleEmojis()">😀</button>
+              <input type="text" id="chatInput" placeholder="Mensagem..." data-i18n-placeholder="chat.input" onkeydown="if(event.key==='Enter') sendMessage()">
+              <button onclick="sendMessage()" data-i18n="chat.send">Enviar</button>
+              <div class="emoji-panel" id="emojiPanel">
+                <span class="emoji-item" onclick="insertEmoji('😀')">😀</span>
+                <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
+                <span class="emoji-item" onclick="insertEmoji('🥰')">🥰</span>
+                <span class="emoji-item" onclick="insertEmoji('😎')">😎</span>
+                <span class="emoji-item" onclick="insertEmoji('🤩')">🤩</span>
+                <span class="emoji-item" onclick="insertEmoji('😭')">😭</span>
+                <span class="emoji-item" onclick="insertEmoji('🥳')">🥳</span>
+                <span class="emoji-item" onclick="insertEmoji('👍')">👍</span>
+                <span class="emoji-item" onclick="insertEmoji('❤️')">❤️</span>
+                <span class="emoji-item" onclick="insertEmoji('🔥')">🔥</span>
+                <span class="emoji-item" onclick="insertEmoji('🎵')">🎵</span>
+                <span class="emoji-item" onclick="insertEmoji('🎸')">🎸</span>
+                <span class="emoji-item" onclick="insertEmoji('🎤')">🎤</span>
+                <span class="emoji-item" onclick="insertEmoji('🎧')">🎧</span>
+                <span class="emoji-item" onclick="insertEmoji('✨')">✨</span>
+                <span class="emoji-item" onclick="insertEmoji('🌟')">🌟</span>
+                <span class="emoji-item" onclick="insertEmoji('💯')">💯</span>
+                <span class="emoji-item" onclick="insertEmoji('🙌')">🙌</span>
+                <span class="emoji-item" onclick="insertEmoji('👏')">👏</span>
+                <span class="emoji-item" onclick="insertEmoji('🤘')">🤘</span>
+                <span class="emoji-item" onclick="insertEmoji('🕺')">🕺</span>
+                <span class="emoji-item" onclick="insertEmoji('💃')">💃</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE ROOM -->
+  <div class="modal-overlay" id="createRoomModal">
+    <div class="modal">
+      <h3 data-i18n="createRoom.title">Criar sala</h3>
+      <input type="text" id="newRoomName" placeholder="Nome da sala" maxlength="40" data-i18n-placeholder="createRoom.placeholder">
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeCreateRoom()" data-i18n="createRoom.cancel">Cancelar</button>
+        <button class="btn-primary" onclick="createRoom()" data-i18n="createRoom.create">Criar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>Desenvolvido por <a href="https://www.linkedin.com/in/ggiuntini/" target="_blank">Guilherme Giuntini</a></span>
+    <div class="social-icons">
+      <a href="#" onclick="sharePage('whatsapp'); return false;" title="WhatsApp"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/960px-WhatsApp.svg.png" alt="WhatsApp"></a>
+      <a href="#" onclick="sharePage('twitter'); return false;" title="Twitter"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvBQj3eYlJYOfo13gijtX4XWNDpiM0O7a7IfpxGMhiQ9CltsrZ8myP9uQ&s=10" alt="Twitter"></a>
+      <a href="#" onclick="sharePage('facebook'); return false;" title="Facebook"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Facebook_f_logo_%282021%29.svg/3840px-Facebook_f_logo_%282021%29.svg.png" alt="Facebook"></a>
+      <a href="#" onclick="sharePage('threads'); return false;" title="Threads"><img src="https://img.magnific.com/vetores-gratis/topicos-logotipo-em-fundo-preto-em-vetor_1017-45262.jpg?semt=ais_hybrid&w=740&q=80" alt="Threads"></a>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ===== JAVASCRIPT COMPLETO E CORRIGIDO ===== -->
+  <!-- ============================================================ -->
+  <script>
+    // ==================== CONFIGURAÇÕES GLOBAIS ====================
+    const MAX_SONG_DURATION = 600;
+    const DISLIKE_THRESHOLD = 10;
+    const COOLDOWN = 30000;
+    const MAX_SONGS_PER_USER = 3;
+
     const socket = io({ withCredentials: true });
-    let currentUser = null, myName = '', myAvatar = '🎸', amIAdmin = false, currentRoom = null, currentRoomData = null;
-    let player = null, currentTrackId = null, lastAddTime = 0, songData = null;
+
+    let currentUser = null;
+    let myName = '';
+    let myAvatar = '🎸';
+    let amIAdmin = false;
+    let currentRoom = null;
+    let currentRoomData = null;
+    let player = null;
+    let currentTrackId = null;
+    let lastAddTime = 0;
+    let songData = null;
     let currentTheme = localStorage.getItem('sonoraTheme') || 'dark';
-    let messageLikesSync = {}, queueVotes = {}, myFavorites = [], crossfadeInterval = null;
-    let pendingRoomAfterLogin = null, myPoints = 0, myBadges = [];
+    let messageLikesSync = {};
+    let queueVotes = {};
+    let myFavorites = [];
+    let crossfadeInterval = null;
+    let pendingRoomAfterLogin = null;
+    let myPoints = 0;
+    let myBadges = [];
     let searchTimeout = null;
     let currentLang = localStorage.getItem('sonoraLang') || 'pt';
     let audioCtx = null;
     let volumeLevel = 80;
 
-    // ===== TRADUÇÕES =====
+    // ==================== TRADUÇÕES ====================
     const translations = {
       pt: {
         'hero.title': 'A pista é sua.<br>A trilha sonora é <span>de todo mundo</span>.',
@@ -252,13 +726,23 @@
       }
     };
 
-    function t(key) { return translations[currentLang]?.[key] || key; }
+    // ==================== FUNÇÕES AUXILIARES ====================
+    function t(key) {
+      return translations[currentLang]?.[key] || key;
+    }
+
     function setLanguage(lang) {
       currentLang = lang;
       localStorage.setItem('sonoraLang', lang);
       document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-      document.querySelectorAll('[data-i18n]').forEach(el => { const text = t(el.dataset.i18n); if (text) el.innerHTML = text; });
-      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { const text = t(el.dataset.i18nPlaceholder); if (text) el.placeholder = text; });
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const text = t(el.dataset.i18n);
+        if (text) el.innerHTML = text;
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const text = t(el.dataset.i18nPlaceholder);
+        if (text) el.placeholder = text;
+      });
     }
 
     function playSound(type) {
@@ -283,10 +767,11 @@
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.15);
-      } catch(e) {}
+      } catch (e) {}
     }
 
     function $(id) { return document.getElementById(id); }
+
     function toast(msg, type) {
       const el = $('toast');
       el.textContent = msg;
@@ -294,31 +779,62 @@
       el.classList.add('show');
       setTimeout(() => el.classList.remove('show'), 3000);
     }
-    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-    function formatTime(d) { const date = new Date(d); return date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0'); }
-    function formatDuration(s) { if (!s || s <= 0) return '0:00'; const m = Math.floor(s/60); const sec = Math.floor(s%60); return m + ':' + sec.toString().padStart(2,'0'); }
-    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); const el = document.getElementById('screen-'+id); if(el) el.classList.add('active'); }
 
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    function formatTime(date) {
+      const d = new Date(date);
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+
+    function formatDuration(seconds) {
+      if (!seconds || seconds <= 0) return '0:00';
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const el = document.getElementById('screen-' + id);
+      if (el) el.classList.add('active');
+    }
+
+    // ==================== PROFANIDADE ====================
     const badWords = ['porra','caralho','merda','puta','foda','cu','buceta','pica','bosta','viado','bicha','corno','fdp','pqp','arrombado','desgraçado','vagabundo','escroto','idiota','imbecil','retardado','fuck','shit','bitch','asshole','dick','cock','pussy','cunt','whore','slut','bastard','damn','hell','nigger','fag'];
-    function censorText(t) { let c = t; badWords.forEach(w => { const r = new RegExp('\\b' + w + '\\b','gi'); c = c.replace(r,'***'); }); return c; }
 
-    // ===== TEMAS (DARK PADRÃO) =====
+    function censorText(text) {
+      let c = text;
+      badWords.forEach(word => {
+        const regex = new RegExp('\\b' + word + '\\b', 'gi');
+        c = c.replace(regex, '***');
+      });
+      return c;
+    }
+
+    // ==================== TEMAS ====================
     function applyTheme() {
       const themes = {
-        'dark': { btn:'🌙', bg:'#050508', card:'#0f0f18', hover:'#161620', border:'#1e1e2e', text:'#f0f0f8', textSec:'#9a9ab0', textMuted:'#555570', accent:'#ff6b35', accent2:'#7c3aed', bgImage:'none', overlay:'transparent' },
-        'ocean': { btn:'🌊', bg:'#e8f0fe', card:'#ffffff', hover:'#d2e3fc', border:'#b6c8e6', text:'#0b1e3a', textSec:'#2a4b7c', textMuted:'#6a8bb0', accent:'#1a73e8', accent2:'#0d47a1', bgImage:'none', overlay:'transparent' },
-        'sunset': { btn:'🌅', bg:'#1a0e12', card:'#2d1b20', hover:'#40262e', border:'#5a3845', text:'#fde8e0', textSec:'#eab8a8', textMuted:'#a07268', accent:'#ff7b54', accent2:'#ffb26b', bgImage:'none', overlay:'transparent' },
-        'forest': { btn:'🌿', bg:'#0f130a', card:'#1c2415', hover:'#2a3420', border:'#3d4a30', text:'#edf3e0', textSec:'#b3c99a', textMuted:'#6b7f56', accent:'#8bc34a', accent2:'#558b2f', bgImage:'none', overlay:'transparent' },
-        'high-contrast': { btn:'🟡', bg:'#000000', card:'#1a1a1a', hover:'#333333', border:'#666666', text:'#ffffff', textSec:'#f0f0f0', textMuted:'#aaaaaa', accent:'#ffd700', accent2:'#ffaa00', bgImage:'none', overlay:'transparent' },
-        'cherry': { btn:'🌸', bg:'#fcf4f7', card:'#ffffff', hover:'#fce4ec', border:'#f8bbd0', text:'#4a1a2c', textSec:'#7a4b5c', textMuted:'#b08b9a', accent:'#e91e63', accent2:'#ad1457', bgImage:'none', overlay:'transparent' },
-        'retro': { btn:'📺', bg:'#0f0b06', card:'#1c150d', hover:'#2a1f14', border:'#3d2e1e', text:'#e8c98a', textSec:'#c4a064', textMuted:'#7a633a', accent:'#ffa500', accent2:'#cc8400', bgImage:'none', overlay:'rgba(0,0,0,0.4)' }
+        'dark': { btn: '🌙', bg: '#050508', card: '#0f0f18', hover: '#161620', border: '#1e1e2e', text: '#f0f0f8', textSec: '#9a9ab0', textMuted: '#555570', accent: '#ff6b35', accent2: '#7c3aed', bgImage: 'none', overlay: 'transparent' },
+        'ocean': { btn: '🌊', bg: '#e8f0fe', card: '#ffffff', hover: '#d2e3fc', border: '#b6c8e6', text: '#0b1e3a', textSec: '#2a4b7c', textMuted: '#6a8bb0', accent: '#1a73e8', accent2: '#0d47a1', bgImage: 'none', overlay: 'transparent' },
+        'sunset': { btn: '🌅', bg: '#1a0e12', card: '#2d1b20', hover: '#40262e', border: '#5a3845', text: '#fde8e0', textSec: '#eab8a8', textMuted: '#a07268', accent: '#ff7b54', accent2: '#ffb26b', bgImage: 'none', overlay: 'transparent' },
+        'forest': { btn: '🌿', bg: '#0f130a', card: '#1c2415', hover: '#2a3420', border: '#3d4a30', text: '#edf3e0', textSec: '#b3c99a', textMuted: '#6b7f56', accent: '#8bc34a', accent2: '#558b2f', bgImage: 'none', overlay: 'transparent' },
+        'high-contrast': { btn: '🟡', bg: '#000000', card: '#1a1a1a', hover: '#333333', border: '#666666', text: '#ffffff', textSec: '#f0f0f0', textMuted: '#aaaaaa', accent: '#ffd700', accent2: '#ffaa00', bgImage: 'none', overlay: 'transparent' },
+        'cherry': { btn: '🌸', bg: '#fcf4f7', card: '#ffffff', hover: '#fce4ec', border: '#f8bbd0', text: '#4a1a2c', textSec: '#7a4b5c', textMuted: '#b08b9a', accent: '#e91e63', accent2: '#ad1457', bgImage: 'none', overlay: 'transparent' },
+        'retro': { btn: '📺', bg: '#0f0b06', card: '#1c150d', hover: '#2a1f14', border: '#3d2e1e', text: '#e8c98a', textSec: '#c4a064', textMuted: '#7a633a', accent: '#ffa500', accent2: '#cc8400', bgImage: 'none', overlay: 'rgba(0,0,0,0.4)' }
       };
-      const t = themes[currentTheme] || themes['dark'];
-      Object.entries(t).forEach(([k, v]) => {
-        if (k === 'btn') return;
-        document.documentElement.style.setProperty('--' + k, v);
+      const t = themes[currentTheme] || themes.dark;
+      Object.entries(t).forEach(([key, value]) => {
+        if (key === 'btn') return;
+        document.documentElement.style.setProperty('--' + key, value);
       });
-      document.querySelectorAll('#themeBtn, #themeBtnRoom').forEach(b => { if(b) b.textContent = t.btn; });
+      document.querySelectorAll('#themeBtn, #themeBtnRoom').forEach(el => {
+        if (el) el.textContent = t.btn;
+      });
       localStorage.setItem('sonoraTheme', currentTheme);
     }
 
@@ -330,20 +846,37 @@
       toast('Tema: ' + currentTheme, 'success');
     }
 
-    // ===== LOGIN / SIGNUP =====
-    function showLogin() { $('landingScreen').style.display = 'none'; $('loginScreen').classList.add('active'); }
-    function hideLogin() { $('loginScreen').classList.remove('active'); }
-    function openSignup() { hideLogin(); $('signupModal').classList.add('active'); }
-    function closeSignup() { $('signupModal').classList.remove('active'); $('landingScreen').style.display = 'block'; }
-    function toggleChip(el) { el.classList.toggle('selected'); }
+    // ==================== LOGIN / CADASTRO ====================
+    function showLogin() {
+      $('landingScreen').style.display = 'none';
+      $('loginScreen').classList.add('active');
+    }
 
-    // ===== CORREÇÃO: submitSignup =====
+    function hideLogin() {
+      $('loginScreen').classList.remove('active');
+    }
+
+    function openSignup() {
+      hideLogin();
+      $('signupModal').classList.add('active');
+    }
+
+    function closeSignup() {
+      $('signupModal').classList.remove('active');
+      $('landingScreen').style.display = 'block';
+    }
+
+    function toggleChip(el) {
+      el.classList.toggle('selected');
+    }
+
+    // Cadastro
     async function submitSignup() {
       const nome = $('signupNome').value.trim();
       const email = $('signupEmail').value.trim();
       const senha = $('signupPassword').value.trim();
       const estilos = Array.from(document.querySelectorAll('#signupStyles .chip.selected')).map(c => c.dataset.style);
-      
+
       if (nome.length < 2) return toast('Digite seu nome', 'error');
       if (!email.includes('@')) return toast('E-mail inválido', 'error');
       if (senha.length < 6) return toast('Senha deve ter 6+ caracteres', 'error');
@@ -356,7 +889,7 @@
 
       try {
         await firebase.auth().createUserWithEmailAndPassword(email, senha);
-        
+
         const res = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -400,7 +933,7 @@
       }
     }
 
-    // ===== CORREÇÃO: doLogin =====
+    // Login
     async function doLogin() {
       const email = $('loginEmail').value.trim();
       const senha = $('loginPassword').value.trim();
@@ -415,27 +948,27 @@
       btn.textContent = 'Entrando...';
       try {
         await firebase.auth().signInWithEmailAndPassword(email, senha);
-        
+
         let res = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, senha })
         });
         let data = await res.json();
+
         if (!res.ok) {
           // Se o usuário não existir no Firestore, tenta criar
           if (res.status === 404 || data.error?.includes('não encontrado')) {
             await fetch('/api/signup', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                nome: email.split('@')[0] || 'Usuário', 
-                email, 
-                senha, 
-                estilos: ['pop'] 
+              body: JSON.stringify({
+                nome: email.split('@')[0] || 'Usuário',
+                email,
+                senha,
+                estilos: ['pop']
               })
             });
-            // Tenta novamente
             const retryRes = await fetch('/api/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -448,13 +981,13 @@
             throw new Error(data.error || 'Erro no servidor');
           }
         }
-        
+
         currentUser = data.user;
         myName = currentUser.nome;
         myAvatar = currentUser.avatar || '🎸';
         myPoints = currentUser.points || 0;
         myBadges = currentUser.badges || [];
-        
+
         hideLogin();
         $('landingScreen').style.display = 'none';
         showScreen('lobby');
@@ -482,7 +1015,10 @@
     function doLogout() {
       firebase.auth().signOut().catch(() => {});
       fetch('/api/logout', { method: 'POST' }).catch(() => {});
-      if (currentRoom) { socket.emit('leaveRoom'); currentRoom = null; }
+      if (currentRoom) {
+        socket.emit('leaveRoom');
+        currentRoom = null;
+      }
       currentUser = null;
       showScreen('lobby');
       $('screen-lobby').classList.remove('active');
@@ -503,12 +1039,19 @@
     function checkAdmin() {
       const isAdmin = currentUser && (currentUser.email === 'admin@sonora.com' || amIAdmin);
       amIAdmin = isAdmin;
-      ['adminBtn','adminBtnRoom'].forEach(id => { const el = $(id); if(el) el.style.display = isAdmin ? 'flex' : 'none'; });
-      ['adminBadge'].forEach(id => { const el = $(id); if(el) el.classList.toggle('hidden', !isAdmin); });
+      ['adminBtn', 'adminBtnRoom'].forEach(id => {
+        const el = $(id);
+        if (el) el.style.display = isAdmin ? 'flex' : 'none';
+      });
+      ['adminBadge'].forEach(id => {
+        const el = $(id);
+        if (el) el.classList.toggle('hidden', !isAdmin);
+      });
       const adminRemoveBtn = $('adminRemoveBtn');
       if (adminRemoveBtn) adminRemoveBtn.style.display = isAdmin ? 'flex' : 'none';
     }
 
+    // ==================== ADMIN ====================
     function switchAdminTab(tabId) {
       document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-bar button').forEach(el => el.classList.remove('active'));
@@ -527,7 +1070,10 @@
         loadAdminTopSongs();
       }
     }
-    function closeAdmin() { $('adminPanel').classList.remove('active'); }
+
+    function closeAdmin() {
+      $('adminPanel').classList.remove('active');
+    }
 
     async function loadAdminData() {
       try {
@@ -537,8 +1083,9 @@
         $('adminUsers').textContent = d.totalUsers || 0;
         $('adminRooms').textContent = d.totalRooms || 0;
         $('adminOnline').textContent = d.onlineUsers || 0;
-      } catch(e) {}
+      } catch (e) {}
     }
+
     async function loadAdminUsers() {
       try {
         const r = await fetch('/api/admin/users', { credentials: 'include' });
@@ -546,7 +1093,10 @@
         const users = await r.json();
         const list = $('adminUserList');
         const count = $('adminUserCount');
-        if (!users.length) { list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">Nenhum usuário</div>'; return; }
+        if (!users.length) {
+          list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">Nenhum usuário</div>';
+          return;
+        }
         count.textContent = users.length;
         list.innerHTML = users.map(u => `
           <div class="admin-user-item">
@@ -563,38 +1113,62 @@
             </div>
           </div>
         `).join('');
-      } catch(e) {}
+      } catch (e) {}
     }
+
     async function adminKickUser(email) {
       if (!currentRoom) return toast('Precisa estar em uma sala', 'error');
       if (!confirm(`Expulsar ${email}?`)) return;
       try {
-        const r = await fetch('/api/admin/kick-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email, roomSlug: currentRoom }) });
+        const r = await fetch('/api/admin/kick-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, roomSlug: currentRoom })
+        });
         const d = await r.json();
-        if (r.ok) { toast('✅ Usuário expulso!', 'success'); loadAdminUsers(); }
-        else toast(d.error || 'Erro', 'error');
-      } catch(e) { toast('Erro', 'error'); }
+        if (r.ok) {
+          toast('✅ Usuário expulso!', 'success');
+          loadAdminUsers();
+        } else toast(d.error || 'Erro', 'error');
+      } catch (e) {
+        toast('Erro', 'error');
+      }
     }
+
     async function adminBanUser(email) {
       if (!confirm(`Banir ${email}?`)) return;
       try {
-        const r = await fetch('/api/admin/ban-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email }) });
-        if (r.ok) { toast('✅ Banido!', 'success'); loadAdminUsers(); }
-      } catch(e) {}
+        const r = await fetch('/api/admin/ban-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email })
+        });
+        if (r.ok) {
+          toast('✅ Banido!', 'success');
+          loadAdminUsers();
+        }
+      } catch (e) {}
     }
+
     async function loadAdminQueues() {
       try {
         const r = await fetch('/api/rooms', { credentials: 'include' });
         if (!r.ok) return;
         const rooms = await r.json();
         const c = $('adminQueueList');
-        if (!rooms.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Nenhuma sala ativa</div>'; return; }
+        if (!rooms.length) {
+          c.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Nenhuma sala ativa</div>';
+          return;
+        }
         let html = '';
         for (const room of rooms) {
           html += `<div style="margin-bottom:12px;background:var(--bg);border-radius:6px;padding:8px;border:1px solid var(--border);">`;
           html += `<div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px;">${escapeHtml(room.name)} (${room.queueLength} músicas)</div>`;
-          if (room.queueLength === 0) { html += `<div style="color:var(--text-muted);font-size:11px;">Fila vazia</div>`; }
-          else {
+          if (room.queueLength === 0) {
+            html += `<div style="color:var(--text-muted);font-size:11px;">Fila vazia</div>`;
+          } else {
             try {
               const dr = await fetch(`/api/room/${room.slug}/queue`, { credentials: 'include' });
               if (!dr.ok) throw new Error();
@@ -603,7 +1177,7 @@
                 d.queue.forEach((track, idx) => {
                   const isCurrent = idx === d.currentIndex;
                   html += `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;">`;
-                  html += `<span style="min-width:18px;">${isCurrent ? '▶' : idx+1}</span>`;
+                  html += `<span style="min-width:18px;">${isCurrent ? '▶' : idx + 1}</span>`;
                   html += `<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(track.title)}</span>`;
                   if (!isCurrent) {
                     html += `<button onclick="adminRemoveSong('${room.slug}', ${idx})" style="background:rgba(239,68,68,0.15);border:1px solid var(--danger);color:var(--danger);border-radius:4px;padding:0 6px;font-size:10px;cursor:pointer;">Remover</button>`;
@@ -612,45 +1186,91 @@
                   }
                   html += `</div>`;
                 });
-              } else { html += `<div style="color:var(--text-muted);font-size:11px;">Fila vazia</div>`; }
-            } catch(e) { html += `<div style="color:var(--text-muted);font-size:11px;">Erro ao carregar</div>`; }
+              } else {
+                html += `<div style="color:var(--text-muted);font-size:11px;">Fila vazia</div>`;
+              }
+            } catch (e) {
+              html += `<div style="color:var(--text-muted);font-size:11px;">Erro ao carregar</div>`;
+            }
           }
           html += `</div>`;
         }
         c.innerHTML = html;
-      } catch(e) { $('adminQueueList').innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Erro ao carregar</div>'; }
+      } catch (e) {
+        $('adminQueueList').innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Erro ao carregar</div>';
+      }
     }
+
     async function adminRemoveSong(slug, index) {
       if (!confirm(`Remover?`)) return;
       try {
-        const r = await fetch('/api/admin/remove-song', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ roomSlug: slug, index }) });
+        const r = await fetch('/api/admin/remove-song', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ roomSlug: slug, index })
+        });
         const d = await r.json();
-        if (r.ok) { toast('✅ Removida!', 'success'); loadAdminQueues(); }
-        else toast(d.error || 'Erro', 'error');
-      } catch(e) { toast('Erro', 'error'); }
+        if (r.ok) {
+          toast('✅ Removida!', 'success');
+          loadAdminQueues();
+        } else toast(d.error || 'Erro', 'error');
+      } catch (e) {
+        toast('Erro', 'error');
+      }
     }
+
     async function adminPromote(email) {
       if (!confirm(`Promover ${email}?`)) return;
       try {
-        const r = await fetch('/api/admin/promote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email }) });
-        if (r.ok) { toast('✅ Promovido!', 'success'); loadAdminUsers(); }
-      } catch(e) {}
+        const r = await fetch('/api/admin/promote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email })
+        });
+        if (r.ok) {
+          toast('✅ Promovido!', 'success');
+          loadAdminUsers();
+        }
+      } catch (e) {}
     }
+
     async function adminDeleteUser(email) {
       if (!confirm(`Deletar ${email}?`)) return;
       try {
-        const r = await fetch('/api/admin/delete-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email }) });
-        if (r.ok) { toast('✅ Deletado!', 'success'); loadAdminUsers(); loadAdminData(); }
-      } catch(e) {}
+        const r = await fetch('/api/admin/delete-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email })
+        });
+        if (r.ok) {
+          toast('✅ Deletado!', 'success');
+          loadAdminUsers();
+          loadAdminData();
+        }
+      } catch (e) {}
     }
+
     async function adminClearChats() {
       if (!confirm('Limpar TODOS os chats?')) return;
-      try { await fetch('/api/admin/clear-all-chats', { method: 'POST', credentials: 'include' }); toast('✅ Chats limpos!', 'success'); } catch(e) {}
+      try {
+        await fetch('/api/admin/clear-all-chats', { method: 'POST', credentials: 'include' });
+        toast('✅ Chats limpos!', 'success');
+      } catch (e) {}
     }
+
     async function adminClearRooms() {
       if (!confirm('LIMPAR TODAS as salas?')) return;
-      try { await fetch('/api/admin/clear-all-rooms', { method: 'POST', credentials: 'include' }); toast('✅ Salas limpas!', 'success'); loadAdminData(); loadRooms(); } catch(e) {}
+      try {
+        await fetch('/api/admin/clear-all-rooms', { method: 'POST', credentials: 'include' });
+        toast('✅ Salas limpas!', 'success');
+        loadAdminData();
+        loadRooms();
+      } catch (e) {}
     }
+
     async function adminExport() {
       try {
         const r = await fetch('/api/admin/export-data', { credentials: 'include' });
@@ -660,13 +1280,14 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `sonora-fan-${new Date().toISOString().slice(0,10)}.json`;
+          a.download = `sonora-fan-${new Date().toISOString().slice(0, 10)}.json`;
           a.click();
           URL.revokeObjectURL(url);
           toast('✅ Exportado!', 'success');
         }
-      } catch(e) {}
+      } catch (e) {}
     }
+
     function adminBroadcast() {
       const msg = prompt('Mensagem para todos:');
       if (!msg) return;
@@ -692,7 +1313,7 @@
         } else {
           toast(d.error || 'Erro ao remover', 'error');
         }
-      } catch(e) {
+      } catch (e) {
         toast('Erro ao remover', 'error');
       }
     }
@@ -710,14 +1331,25 @@
             if (data.mostVoted) allSongs = allSongs.concat(data.mostVoted);
           }
         }
-        allSongs.sort((a,b) => b.votes - a.votes);
+        allSongs.sort((a, b) => b.votes - a.votes);
         const top = allSongs.slice(0, 10);
         const container = $('adminTopSongs');
-        if (top.length === 0) { container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhuma música votada ainda.</div>'; return; }
-        container.innerHTML = top.map((s, i) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>${i+1}. ${escapeHtml(s.title)} — ${escapeHtml(s.artist)}</span><span style="color:var(--accent);font-weight:700;">👍 ${s.votes}</span></div>`).join('');
-      } catch(e) { $('adminTopSongs').innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Erro ao carregar</div>'; }
+        if (top.length === 0) {
+          container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhuma música votada ainda.</div>';
+          return;
+        }
+        container.innerHTML = top.map((s, i) =>
+          `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <span>${i + 1}. ${escapeHtml(s.title)} — ${escapeHtml(s.artist)}</span>
+            <span style="color:var(--accent);font-weight:700;">👍 ${s.votes}</span>
+          </div>`
+        ).join('');
+      } catch (e) {
+        $('adminTopSongs').innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Erro ao carregar</div>';
+      }
     }
 
+    // ==================== COMPARTILHAR ====================
     function sharePage(platform) {
       const url = window.location.origin;
       const text = '🎵 Venha ouvir música no Sonora Fan!';
@@ -730,7 +1362,7 @@
       if (shareUrls[platform]) window.open(shareUrls[platform], '_blank');
     }
 
-    // CORREÇÃO: copyInviteLink com fallback
+    // ==================== CONVITE ====================
     function copyInviteLink() {
       if (!currentRoom) return toast('Entre em uma sala', 'error');
       const url = window.location.origin + '/invite/' + currentRoom;
@@ -743,24 +1375,45 @@
         fallbackCopy(url);
       }
     }
+
     function fallbackCopy(text) {
       const textarea = document.createElement('textarea');
       textarea.value = text;
       document.body.appendChild(textarea);
       textarea.select();
-      try { document.execCommand('copy'); toast('🔗 Link copiado!', 'success'); } catch (e) { toast('Erro ao copiar', 'error'); }
+      try {
+        document.execCommand('copy');
+        toast('🔗 Link copiado!', 'success');
+      } catch (e) {
+        toast('Erro ao copiar', 'error');
+      }
       document.body.removeChild(textarea);
     }
 
-    // ===== FAVORITOS =====
+    // ==================== FAVORITOS ====================
     async function loadFavorites() {
-      try { const r = await fetch('/api/favorites', { credentials: 'include' }); if (r.ok) myFavorites = await r.json(); } catch(e) {}
+      try {
+        const r = await fetch('/api/favorites', { credentials: 'include' });
+        if (r.ok) myFavorites = await r.json();
+      } catch (e) {}
     }
-    function toggleFavorites() { const m = $('favoritesModal'); m.classList.toggle('active'); if (m.classList.contains('active')) renderFavorites(); }
-    function closeFavorites() { $('favoritesModal').classList.remove('active'); }
+
+    function toggleFavorites() {
+      const m = $('favoritesModal');
+      m.classList.toggle('active');
+      if (m.classList.contains('active')) renderFavorites();
+    }
+
+    function closeFavorites() {
+      $('favoritesModal').classList.remove('active');
+    }
+
     function renderFavorites() {
       const c = $('favoritesList');
-      if (!myFavorites || !myFavorites.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px;">Nenhum favorito ainda. ⭐</div>'; return; }
+      if (!myFavorites || !myFavorites.length) {
+        c.innerHTML = '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px;">Nenhum favorito ainda. ⭐</div>';
+        return;
+      }
       c.innerHTML = myFavorites.map(f => `
         <div class="favorite-item">
           <div class="info">
@@ -774,6 +1427,7 @@
         </div>
       `).join('');
     }
+
     async function addFavoriteToQueue(id) {
       const fav = myFavorites.find(f => f.id === id);
       if (!fav) return toast('Favorito não encontrado', 'error');
@@ -781,42 +1435,83 @@
       socket.emit('addSong', { id: fav.id, title: fav.title, artist: fav.artist, duration: null });
       toast(`🎵 ${fav.title} adicionada!`, 'success');
     }
+
     async function removeFavorite(id) {
-      try { const r = await fetch(`/api/favorites/${id}`, { method: 'DELETE', credentials: 'include' }); if (r.ok) { myFavorites = myFavorites.filter(f => f.id !== id); renderFavorites(); toast('🗑️ Removido', 'success'); } } catch(e) {}
+      try {
+        const r = await fetch(`/api/favorites/${id}`, { method: 'DELETE', credentials: 'include' });
+        if (r.ok) {
+          myFavorites = myFavorites.filter(f => f.id !== id);
+          renderFavorites();
+          toast('🗑️ Removido', 'success');
+        }
+      } catch (e) {}
     }
+
     async function favoriteCurrent() {
       if (!currentRoomData || !currentRoomData.queue || !currentRoomData.queue.length) return toast('Nenhuma música tocando', 'error');
       const track = currentRoomData.queue[currentRoomData.currentIndex];
       if (!track) return toast('Nenhuma música', 'error');
       await addFavorite(track.id, track.title, track.artist);
     }
+
     async function favPreview() {
       if (!songData) return toast('Nenhuma música', 'error');
       await addFavorite(songData.id, songData.title, songData.artist);
     }
+
     async function addFavorite(id, title, artist) {
-      if (myFavorites.find(f => f.id === id)) { toast('Já está nos favoritos ⭐', 'success'); return; }
+      if (myFavorites.find(f => f.id === id)) {
+        toast('Já está nos favoritos ⭐', 'success');
+        return;
+      }
       try {
-        const r = await fetch('/api/favorites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ videoId: id, title, artist }) });
-        if (r.ok) { myFavorites.push({ id, title, artist }); toast('⭐ Adicionado aos favoritos!', 'success'); }
-      } catch(e) {}
+        const r = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ videoId: id, title, artist })
+        });
+        if (r.ok) {
+          myFavorites.push({ id, title, artist });
+          toast('⭐ Adicionado aos favoritos!', 'success');
+        }
+      } catch (e) {}
     }
 
-    // ===== AVATAR =====
-    function openAvatarModal() { $('avatarModal').classList.add('active'); document.querySelectorAll('.avatar-option').forEach(el => el.classList.toggle('selected', el.dataset.avatar === myAvatar)); }
-    function closeAvatarModal() { $('avatarModal').classList.remove('active'); }
+    // ==================== AVATAR ====================
+    function openAvatarModal() {
+      $('avatarModal').classList.add('active');
+      document.querySelectorAll('.avatar-option').forEach(el => el.classList.toggle('selected', el.dataset.avatar === myAvatar));
+    }
+
+    function closeAvatarModal() {
+      $('avatarModal').classList.remove('active');
+    }
+
     async function saveAvatar() {
       const sel = document.querySelector('.avatar-option.selected');
       if (!sel) return toast('Selecione um avatar', 'error');
       const avatar = sel.dataset.avatar;
       try {
-        const r = await fetch('/api/update-avatar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ avatar }) });
-        if (r.ok) { myAvatar = avatar; if (currentUser) currentUser.avatar = avatar; updateUserInfo(); toast('Avatar atualizado!', 'success'); closeAvatarModal(); }
-        else toast('Erro ao atualizar avatar', 'error');
-      } catch(e) { toast('Erro', 'error'); }
+        const r = await fetch('/api/update-avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ avatar })
+        });
+        if (r.ok) {
+          myAvatar = avatar;
+          if (currentUser) currentUser.avatar = avatar;
+          updateUserInfo();
+          toast('Avatar atualizado!', 'success');
+          closeAvatarModal();
+        } else toast('Erro ao atualizar avatar', 'error');
+      } catch (e) {
+        toast('Erro', 'error');
+      }
     }
 
-    // ===== LOBBY =====
+    // ==================== LOBBY ====================
     async function loadRooms() {
       const grid = $('roomGrid');
       grid.innerHTML = '<div class="empty-state"><div class="icon">🎵</div><p>Carregando salas...</p></div>';
@@ -827,8 +1522,11 @@
         clearTimeout(timeout);
         if (!r.ok) throw new Error('Erro ao buscar salas');
         const roomsData = await r.json();
-        if (!roomsData.length) { grid.innerHTML = '<div class="empty-state"><div class="icon">🎵</div><p>Nenhuma sala ainda. Crie a primeira!</p></div>'; return; }
-        roomsData.sort((a,b) => b.listenerCount - a.listenerCount);
+        if (!roomsData.length) {
+          grid.innerHTML = '<div class="empty-state"><div class="icon">🎵</div><p>Nenhuma sala ainda. Crie a primeira!</p></div>';
+          return;
+        }
+        roomsData.sort((a, b) => b.listenerCount - a.listenerCount);
         grid.innerHTML = '';
         roomsData.forEach(r => {
           const card = document.createElement('div');
@@ -854,33 +1552,57 @@
           `;
           grid.appendChild(card);
         });
-      } catch(e) {
+      } catch (e) {
         grid.innerHTML = '<div class="empty-state"><div class="icon">😕</div><p>Erro ao carregar salas. Verifique sua conexão.</p></div>';
         console.error('Erro em loadRooms:', e);
       }
     }
-    function showCreateRoom() { $('createRoomModal').classList.add('active'); }
-    function closeCreateRoom() { $('createRoomModal').classList.remove('active'); }
+
+    function showCreateRoom() {
+      $('createRoomModal').classList.add('active');
+    }
+
+    function closeCreateRoom() {
+      $('createRoomModal').classList.remove('active');
+    }
+
     async function createRoom() {
       const name = $('newRoomName').value.trim();
       if (!name) return toast('Digite um nome', 'error');
       try {
-        const r = await fetch('/api/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, adminName: myName, color: '#7c3aed' }) });
+        const r = await fetch('/api/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, adminName: myName, color: '#7c3aed' })
+        });
         const d = await r.json();
-        if (d.slug) { closeCreateRoom(); joinRoom(d.slug); }
-      } catch(e) { toast('Erro ao criar sala', 'error'); }
+        if (d.slug) {
+          closeCreateRoom();
+          joinRoom(d.slug);
+        }
+      } catch (e) {
+        toast('Erro ao criar sala', 'error');
+      }
     }
+
     async function joinRandomRoom() {
       try {
         const r = await fetch('/api/rooms/random');
         const d = await r.json();
         if (d.slug) joinRoom(d.slug);
         else toast('Nenhuma sala disponível', 'error');
-      } catch(e) { toast('Erro ao buscar sala', 'error'); }
+      } catch (e) {
+        toast('Erro ao buscar sala', 'error');
+      }
     }
 
     function joinRoom(slug) {
-      if (!currentUser) { pendingRoomAfterLogin = slug; toast('Faça login primeiro', 'error'); showLogin(); return; }
+      if (!currentUser) {
+        pendingRoomAfterLogin = slug;
+        toast('Faça login primeiro', 'error');
+        showLogin();
+        return;
+      }
       currentRoom = slug;
       socket.emit('joinRoom', { slug, name: myName, avatar: myAvatar });
       showScreen('room');
@@ -889,24 +1611,49 @@
       $('adminBadge').classList.add('hidden');
       loadYouTubeAPI();
     }
+
     function leaveRoom() {
       if (currentRoom) socket.emit('leaveRoom');
       currentRoom = null;
       currentRoomData = null;
       if (player && player.stopVideo) player.stopVideo();
-      if (crossfadeInterval) { clearInterval(crossfadeInterval); crossfadeInterval = null; }
+      if (crossfadeInterval) {
+        clearInterval(crossfadeInterval);
+        crossfadeInterval = null;
+      }
       showScreen('lobby');
       loadRooms();
     }
 
-    // ===== PLAYER =====
-    function loadYouTubeAPI() { if (window.YT && window.YT.Player) { initPlayer(); return; } const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag); }
-    function onYouTubeIframeAPIReady() { initPlayer(); }
+    // ==================== PLAYER ====================
+    function loadYouTubeAPI() {
+      if (window.YT && window.YT.Player) {
+        initPlayer();
+        return;
+      }
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+    }
+
+    function onYouTubeIframeAPIReady() {
+      initPlayer();
+    }
+
     function initPlayer() {
       if (player) return;
       player = new YT.Player('youtube-player', {
-        height: '280', width: '100%',
-        playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, modestbranding: 1, enablejsapi: 1 },
+        height: '280',
+        width: '100%',
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          rel: 0,
+          modestbranding: 1,
+          enablejsapi: 1
+        },
         events: {
           onReady: () => {
             const vol = parseInt($('volumeSlider').value) || 80;
@@ -922,14 +1669,25 @@
                 player.setVolume(vol);
                 player.unMute();
               }
-              try { const d = player.getDuration(); if (d > 0) socket.emit('videoDuration', { duration: Math.floor(d) }); } catch(e) {}
-              if (crossfadeInterval) { clearInterval(crossfadeInterval); crossfadeInterval = null; }
+              try {
+                const d = player.getDuration();
+                if (d > 0) socket.emit('videoDuration', { duration: Math.floor(d) });
+              } catch (e) {}
+              if (crossfadeInterval) {
+                clearInterval(crossfadeInterval);
+                crossfadeInterval = null;
+              }
               $('bufferingOverlay').classList.remove('show');
             }
-            if (e.data === YT.PlayerState.BUFFERING) { $('bufferingOverlay').classList.add('show'); }
+            if (e.data === YT.PlayerState.BUFFERING) {
+              $('bufferingOverlay').classList.add('show');
+            }
             if (e.data === YT.PlayerState.ENDED) socket.emit('videoEnded');
           },
-          onError: () => { toast('Erro no vídeo, pulando...', 'error'); setTimeout(() => socket.emit('videoEnded'), 2000); }
+          onError: () => {
+            toast('Erro no vídeo, pulando...', 'error');
+            setTimeout(() => socket.emit('videoEnded'), 2000);
+          }
         }
       });
     }
@@ -953,7 +1711,7 @@
         $('progressFill').style.width = '0%';
         $('currentTime').textContent = '0:00';
         $('totalTime').textContent = '0:00';
-        try { player.stopVideo(); } catch(e) {}
+        try { player.stopVideo(); } catch (e) {}
         return;
       }
 
@@ -968,7 +1726,9 @@
               player.unMute();
               player.setVolume(vol);
               player.playVideo();
-            } catch(e) { console.warn('Erro ao ajustar áudio:', e); }
+            } catch (e) {
+              console.warn('Erro ao ajustar áudio:', e);
+            }
           }
         }, 500);
         setTimeout(() => {
@@ -982,7 +1742,11 @@
         $('trackDj').textContent = '👤 ' + (track.dj || '');
         $('trackCover').innerHTML = `<img src="https://img.youtube.com/vi/${track.id}/mqdefault.jpg" alt="" onerror="this.parentElement.textContent='🎵'">`;
         const items = document.querySelectorAll('.queue-item');
-        items.forEach((el, idx) => { if (idx === state.currentIndex) { el.classList.add('current'); } else el.classList.remove('current'); });
+        items.forEach((el, idx) => {
+          if (idx === state.currentIndex) {
+            el.classList.add('current');
+          } else el.classList.remove('current');
+        });
       }
     }
 
@@ -1008,14 +1772,21 @@
       div.innerHTML = `<span class="pin-icon">📌</span><div class="content"><strong>${escapeHtml(msg.author)}:</strong> ${escapeHtml(msg.text)}</div>${amIAdmin ? `<button class="remove-pin" onclick="removePinnedMessage()">✕</button>` : ''}`;
       container.prepend(div);
     }
-    function removePinnedMessage() { if (!amIAdmin) return; socket.emit('removePinnedMessage'); }
+
+    function removePinnedMessage() {
+      if (!amIAdmin) return;
+      socket.emit('removePinnedMessage');
+    }
 
     function renderQueue(queue, currentIndex) {
       const list = $('queueList');
       const count = $('queueCount');
       count.textContent = queue.length + ' música' + (queue.length !== 1 ? 's' : '');
       list.innerHTML = '';
-      if (queue.length === 0) { list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0;">Nenhuma música na fila</div>'; return; }
+      if (queue.length === 0) {
+        list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0;">Nenhuma música na fila</div>';
+        return;
+      }
       const isGlobalAdmin = currentUser && currentUser.email === 'admin@sonora.com';
       const isUserAdmin = amIAdmin || isGlobalAdmin;
       queue.forEach((track, i) => {
@@ -1025,17 +1796,20 @@
           div.draggable = true;
           div.dataset.index = i;
           div.dataset.id = track._id || track.id;
-          div.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', i); div.classList.add('dragging'); });
+          div.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', i);
+            div.classList.add('dragging');
+          });
           div.addEventListener('dragend', () => div.classList.remove('dragging'));
           div.addEventListener('dragover', (e) => e.preventDefault());
-          div.addEventListener('drop', (e) => { 
-            e.preventDefault(); 
-            const from = parseInt(e.dataTransfer.getData('text/plain')); 
-            if (from === i || from === currentIndex) return; 
-            const newOrder = queue.map(t => t._id || t.id); 
-            const [removed] = newOrder.splice(from, 1); 
-            newOrder.splice(i, 0, removed); 
-            socket.emit('reorderQueue', newOrder); 
+          div.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const from = parseInt(e.dataTransfer.getData('text/plain'));
+            if (from === i || from === currentIndex) return;
+            const newOrder = queue.map(t => t._id || t.id);
+            const [removed] = newOrder.splice(from, 1);
+            newOrder.splice(i, 0, removed);
+            socket.emit('reorderQueue', newOrder);
           });
         }
         const votes = queueVotes[i] || { up: [], down: [] };
@@ -1045,9 +1819,12 @@
         const userVotedDown = votes.down.includes(myName);
         const total = upCount + downCount;
         const score = upCount - downCount;
-        let scoreClass = '', scoreSymbol = '⚪';
-        if (score > 0) { scoreClass = 'positive'; scoreSymbol = '👍'; }
-        if (score < 0) { scoreClass = 'negative'; scoreSymbol = '👎'; }
+        let scoreClass = '',
+          scoreSymbol = '⚪';
+        if (score > 0) { scoreClass = 'positive';
+          scoreSymbol = '👍'; }
+        if (score < 0) { scoreClass = 'negative';
+          scoreSymbol = '👎'; }
         div.innerHTML = `
           <span class="pos">${i === currentIndex ? '▶' : i + 1}</span>
           <div class="thumb"><img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.style.display='none'"></div>
@@ -1069,15 +1846,38 @@
     function renderWaitingQueue(waitingQueue) {
       const label = $('waitingQueueLabel');
       const list = $('waitingQueueList');
-      if (!waitingQueue || waitingQueue.length === 0) { label.classList.add('hidden'); list.innerHTML = ''; return; }
+      if (!waitingQueue || waitingQueue.length === 0) {
+        label.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+      }
       label.classList.remove('hidden');
-      list.innerHTML = waitingQueue.map((track, i) => `<div class="queue-item waiting" style="border-left-color:var(--warning);"><span class="pos">${i + 1}</span><div class="thumb"><img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.style.display='none'"></div><div class="info"><div class="title">${escapeHtml(track.title)}</div><div class="artist">${escapeHtml(track.artist)}</div></div><span class="dj">${escapeHtml(track.dj || '')}</span></div>`).join('');
+      list.innerHTML = waitingQueue.map((track, i) =>
+        `<div class="queue-item waiting" style="border-left-color:var(--warning);">
+          <span class="pos">${i + 1}</span>
+          <div class="thumb"><img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.style.display='none'"></div>
+          <div class="info">
+            <div class="title">${escapeHtml(track.title)}</div>
+            <div class="artist">${escapeHtml(track.artist)}</div>
+          </div>
+          <span class="dj">${escapeHtml(track.dj || '')}</span>
+        </div>`
+      ).join('');
     }
 
-    function voteSkip() { if (!currentRoom) { toast('Entre em uma sala', 'error'); return; } socket.emit('voteSkip'); }
+    function voteSkip() {
+      if (!currentRoom) {
+        toast('Entre em uma sala', 'error');
+        return;
+      }
+      socket.emit('voteSkip');
+    }
 
     function startCrossfade() {
-      if (crossfadeInterval) { clearInterval(crossfadeInterval); crossfadeInterval = null; }
+      if (crossfadeInterval) {
+        clearInterval(crossfadeInterval);
+        crossfadeInterval = null;
+      }
       crossfadeInterval = setInterval(() => {
         try {
           if (!player || !player.getCurrentTime) return;
@@ -1090,10 +1890,14 @@
             const steps = 20;
             const step = vol / steps;
             let cVol = vol;
-            const fadeOut = setInterval(() => { cVol = Math.max(0, cVol - step); if (player && player.setVolume) player.setVolume(Math.round(cVol)); if (cVol <= 0) clearInterval(fadeOut); }, 50);
+            const fadeOut = setInterval(() => {
+              cVol = Math.max(0, cVol - step);
+              if (player && player.setVolume) player.setVolume(Math.round(cVol));
+              if (cVol <= 0) clearInterval(fadeOut);
+            }, 50);
             setTimeout(() => clearInterval(fadeOut), 3000);
           }
-        } catch(e) {}
+        } catch (e) {}
       }, 500);
     }
 
@@ -1109,24 +1913,50 @@
     }
 
     function voteSong(index, type) {
-      if (!currentRoom) { toast('Entre em uma sala para votar', 'error'); return; }
-      if (currentRoomData && currentRoomData.currentIndex === index) { toast('Não é possível votar na música atual', 'error'); return; }
+      if (!currentRoom) {
+        toast('Entre em uma sala para votar', 'error');
+        return;
+      }
+      if (currentRoomData && currentRoomData.currentIndex === index) {
+        toast('Não é possível votar na música atual', 'error');
+        return;
+      }
       socket.emit('voteSong', { index, type, room: currentRoom });
     }
 
+    // ==================== ADICIONAR MÚSICA ====================
     function handleSearchInput(value) {
       if (searchTimeout) clearTimeout(searchTimeout);
       const results = $('searchResults');
-      if (!value || value.length < 2) { results.classList.remove('show'); return; }
+      if (!value || value.length < 2) {
+        results.classList.remove('show');
+        return;
+      }
       searchTimeout = setTimeout(async () => {
         try {
           const r = await fetch(`/api/search-youtube?q=${encodeURIComponent(value)}`);
           const data = await r.json();
-          if (!r.ok) { results.innerHTML = `<div style="color:var(--danger);padding:10px;text-align:center;font-size:13px;">⚠️ ${data.error || 'Erro na busca'}</div>`; results.classList.add('show'); return; }
-          if (!data.items || data.items.length === 0) { results.innerHTML = '<div style="color:var(--text-muted);padding:10px;text-align:center;font-size:13px;">Nenhum resultado encontrado</div>'; results.classList.add('show'); return; }
-          results.innerHTML = data.items.map(item => `<div class="search-item" onclick="selectSearchResult('${item.id}','${escapeHtml(item.title)}','${escapeHtml(item.artist)}')"><img src="${item.thumb}" alt=""><div class="info"><div class="title">${escapeHtml(item.title)}</div><div class="artist">${escapeHtml(item.artist)}</div></div></div>`).join('');
+          if (!r.ok) {
+            results.innerHTML = `<div style="color:var(--danger);padding:10px;text-align:center;font-size:13px;">⚠️ ${data.error || 'Erro na busca'}</div>`;
+            results.classList.add('show');
+            return;
+          }
+          if (!data.items || data.items.length === 0) {
+            results.innerHTML = '<div style="color:var(--text-muted);padding:10px;text-align:center;font-size:13px;">Nenhum resultado encontrado</div>';
+            results.classList.add('show');
+            return;
+          }
+          results.innerHTML = data.items.map(item =>
+            `<div class="search-item" onclick="selectSearchResult('${item.id}','${escapeHtml(item.title)}','${escapeHtml(item.artist)}')">
+              <img src="${item.thumb}" alt="">
+              <div class="info">
+                <div class="title">${escapeHtml(item.title)}</div>
+                <div class="artist">${escapeHtml(item.artist)}</div>
+              </div>
+            </div>`
+          ).join('');
           results.classList.add('show');
-        } catch(e) {
+        } catch (e) {
           results.innerHTML = '<div style="color:var(--danger);padding:10px;text-align:center;font-size:13px;">⚠️ Erro de conexão. Tente novamente.</div>';
           results.classList.add('show');
         }
@@ -1136,10 +1966,16 @@
     function selectSearchResult(id, title, artist) {
       $('searchResults').classList.remove('show');
       $('songUrl').value = id;
-      fetch(`/api/video-info?id=${id}`).then(r => r.json()).then(data => {
-        songData = { id, title, artist, duration: data.duration || null };
-        showPreview(songData);
-      }).catch(() => { songData = { id, title, artist, duration: null }; showPreview(songData); });
+      fetch(`/api/video-info?id=${id}`)
+        .then(r => r.json())
+        .then(data => {
+          songData = { id, title, artist, duration: data.duration || null };
+          showPreview(songData);
+        })
+        .catch(() => {
+          songData = { id, title, artist, duration: null };
+          showPreview(songData);
+        });
     }
 
     function extractYouTubeId(url) {
@@ -1156,7 +1992,7 @@
           const idx = parts.findIndex(p => markers.includes(p));
           if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
         }
-      } catch(e) {}
+      } catch (e) {}
       const match = url.match(/[a-zA-Z0-9_-]{11}/);
       return match ? match[0] : '';
     }
@@ -1165,7 +2001,11 @@
       const url = $('songUrl').value.trim();
       if (!url) { clearPreview(); return; }
       const videoId = extractYouTubeId(url);
-      if (!videoId) { toast('Link do YouTube inválido', 'error'); clearPreview(); return; }
+      if (!videoId) {
+        toast('Link do YouTube inválido', 'error');
+        clearPreview();
+        return;
+      }
       const box = $('songPreview');
       box.classList.remove('hidden');
       $('previewThumb').innerHTML = '⏳';
@@ -1176,12 +2016,21 @@
       try {
         const r = await fetch(`/api/video-info?id=${videoId}`);
         const data = await r.json();
-        if (r.ok) { songData = { id: videoId, title: data.title, artist: data.artist || 'Desconhecido', duration: data.duration || null }; showPreview(songData); return; }
-      } catch(e) {
+        if (r.ok) {
+          songData = { id: videoId, title: data.title, artist: data.artist || 'Desconhecido', duration: data.duration || null };
+          showPreview(songData);
+          return;
+        }
+      } catch (e) {
         try {
           const oembed = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
-          if (oembed.ok) { const d = await oembed.json(); songData = { id: videoId, title: d.title || 'Música do YouTube', artist: d.author_name || 'Desconhecido', duration: null }; showPreview(songData); return; }
-        } catch(e2) {}
+          if (oembed.ok) {
+            const d = await oembed.json();
+            songData = { id: videoId, title: d.title || 'Música do YouTube', artist: d.author_name || 'Desconhecido', duration: null };
+            showPreview(songData);
+            return;
+          }
+        } catch (e2) {}
         toast('Erro ao buscar informações', 'error');
         clearPreview();
       }
@@ -1197,20 +2046,57 @@
       $('previewArtist').textContent = data.artist || 'Desconhecido';
       const confirmBtn = document.querySelector('.song-preview-confirm');
       if (data.duration > 0) {
-        if (data.duration > MAX_SONG_DURATION) { $('previewStatus').textContent = `⛔ Muito longo! ${formatDuration(data.duration)} > ${MAX_SONG_DURATION/60} min`; $('previewStatus').style.color = 'var(--danger)'; confirmBtn.disabled = true; confirmBtn.textContent = '⛔ Muito longo'; }
-        else if (data.duration > 300) { $('previewStatus').textContent = `⚠️ ${formatDuration(data.duration)} - música longa (máx ${MAX_SONG_DURATION/60} min)`; $('previewStatus').style.color = 'var(--warning)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar'; }
-        else { $('previewStatus').textContent = `✅ ${formatDuration(data.duration)} - dentro do limite`; $('previewStatus').style.color = 'var(--success)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar'; }
-      } else { $('previewStatus').textContent = '⚠️ Duração não verificada. O vídeo será verificado ao carregar.'; $('previewStatus').style.color = 'var(--warning)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar (sem verificação)'; }
+        if (data.duration > MAX_SONG_DURATION) {
+          $('previewStatus').textContent = `⛔ Muito longo! ${formatDuration(data.duration)} > ${MAX_SONG_DURATION/60} min`;
+          $('previewStatus').style.color = 'var(--danger)';
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = '⛔ Muito longo';
+        } else if (data.duration > 300) {
+          $('previewStatus').textContent = `⚠️ ${formatDuration(data.duration)} - música longa (máx ${MAX_SONG_DURATION/60} min)`;
+          $('previewStatus').style.color = 'var(--warning)';
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = '✓ Adicionar';
+        } else {
+          $('previewStatus').textContent = `✅ ${formatDuration(data.duration)} - dentro do limite`;
+          $('previewStatus').style.color = 'var(--success)';
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = '✓ Adicionar';
+        }
+      } else {
+        $('previewStatus').textContent = '⚠️ Duração não verificada. O vídeo será verificado ao carregar.';
+        $('previewStatus').style.color = 'var(--warning)';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '✓ Adicionar (sem verificação)';
+      }
       $('previewActions').classList.remove('hidden');
     }
 
-    function clearPreview() { $('songPreview').classList.add('hidden'); songData = null; }
+    function clearPreview() {
+      $('songPreview').classList.add('hidden');
+      songData = null;
+    }
+
     function confirmAdd() {
-      if (!songData || !songData.id) { toast('Nenhuma música selecionada', 'error'); return; }
-      if (songData.duration && songData.duration > MAX_SONG_DURATION) { toast(`⛔ Vídeo muito longo! Limite: ${MAX_SONG_DURATION/60} min`, 'error'); return; }
+      if (!songData || !songData.id) {
+        toast('Nenhuma música selecionada', 'error');
+        return;
+      }
+      if (songData.duration && songData.duration > MAX_SONG_DURATION) {
+        toast(`⛔ Vídeo muito longo! Limite: ${MAX_SONG_DURATION/60} min`, 'error');
+        return;
+      }
       const now = Date.now();
-      if (now - lastAddTime < COOLDOWN) { const wait = Math.ceil((COOLDOWN - (now - lastAddTime)) / 1000); toast(`Aguarde ${wait}s`, 'error'); return; }
-      socket.emit('addSong', { id: songData.id, title: songData.title || 'Música do YouTube', artist: songData.artist || 'Desconhecido', duration: songData.duration || null });
+      if (now - lastAddTime < COOLDOWN) {
+        const wait = Math.ceil((COOLDOWN - (now - lastAddTime)) / 1000);
+        toast(`Aguarde ${wait}s`, 'error');
+        return;
+      }
+      socket.emit('addSong', {
+        id: songData.id,
+        title: songData.title || 'Música do YouTube',
+        artist: songData.artist || 'Desconhecido',
+        duration: songData.duration || null
+      });
       lastAddTime = Date.now();
       $('songUrl').value = '';
       clearPreview();
@@ -1220,10 +2106,20 @@
 
     function addSong() {
       const url = $('songUrl').value.trim();
-      if (!url) { toast('Cole um link do YouTube', 'error'); return; }
+      if (!url) {
+        toast('Cole um link do YouTube', 'error');
+        return;
+      }
       const videoId = extractYouTubeId(url);
-      if (!videoId) { toast('Link inválido', 'error'); return; }
-      if (songData && songData.id === videoId) { confirmAdd(); } else { previewSong(); }
+      if (!videoId) {
+        toast('Link inválido', 'error');
+        return;
+      }
+      if (songData && songData.id === videoId) {
+        confirmAdd();
+      } else {
+        previewSong();
+      }
     }
 
     function startCooldown() {
@@ -1231,26 +2127,43 @@
       let remaining = COOLDOWN / 1000;
       text.textContent = `Aguarde ${Math.floor(remaining/60)}m${remaining%60}s`;
       text.classList.remove('hidden');
-      const interval = setInterval(() => { remaining--; if (remaining > 0) text.textContent = `Aguarde ${Math.floor(remaining/60)}m${remaining%60}s`; else { clearInterval(interval); text.classList.add('hidden'); } }, 1000);
+      const interval = setInterval(() => {
+        remaining--;
+        if (remaining > 0) text.textContent = `Aguarde ${Math.floor(remaining/60)}m${remaining%60}s`;
+        else {
+          clearInterval(interval);
+          text.classList.add('hidden');
+        }
+      }, 1000);
     }
 
     function copyQueueIds() {
-      if (!currentRoomData || !currentRoomData.queue || !currentRoomData.queue.length) { toast('Fila vazia', 'error'); return; }
+      if (!currentRoomData || !currentRoomData.queue || !currentRoomData.queue.length) {
+        toast('Fila vazia', 'error');
+        return;
+      }
       const ids = currentRoomData.queue.map(t => t.id).join(',');
       navigator.clipboard.writeText(ids).then(() => toast('📋 IDs copiados!', 'success')).catch(() => toast('Erro ao copiar', 'error'));
     }
 
-    // ===== CHAT =====
+    // ==================== CHAT ====================
     function renderMessage(msg) {
       const container = document.getElementById('chatMessagesInner');
       if (!container) return;
       const div = document.createElement('div');
       div.className = 'msg';
-      const msgId = msg._id || 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
+      const msgId = msg._id || 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
       div.dataset.msgId = msgId;
       if (msg.isMusic) {
         div.classList.add('msg-music');
-        div.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;width:100%;"><span style="font-size:14px;">🎵</span><span style="font-weight:700;color:var(--accent);font-size:12px;">${escapeHtml(msg.user)}</span><span style="color:var(--text-muted);font-size:11px;">adicionou</span><span class="msg-time" style="opacity:1;margin-left:auto;font-size:10px;color:var(--text-muted);">${formatTime(msg.createdAt)}</span></div><div class="music-info" style="color:var(--text);font-weight:600;font-size:13px;">${escapeHtml(msg.musicTitle || 'Música')} — ${escapeHtml(msg.musicArtist || 'Desconhecido')}</div>`;
+        div.innerHTML =
+          `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;width:100%;">
+            <span style="font-size:14px;">🎵</span>
+            <span style="font-weight:700;color:var(--accent);font-size:12px;">${escapeHtml(msg.user)}</span>
+            <span style="color:var(--text-muted);font-size:11px;">adicionou</span>
+            <span class="msg-time" style="opacity:1;margin-left:auto;font-size:10px;color:var(--text-muted);">${formatTime(msg.createdAt)}</span>
+          </div>
+          <div class="music-info" style="color:var(--text);font-weight:600;font-size:13px;">${escapeHtml(msg.musicTitle || 'Música')} — ${escapeHtml(msg.musicArtist || 'Desconhecido')}</div>`;
       } else if (msg.isSystem) {
         div.classList.add('msg-system');
         div.innerHTML = `<span class="msg-text" style="color:var(--text-muted);font-style:italic;font-size:12px;">${escapeHtml(msg.text)}</span>`;
@@ -1262,7 +2175,22 @@
         const likeData = messageLikesSync[msgId] || { likes: 0, users: [] };
         const liked = likeData.users.includes(myName);
         const count = likeData.likes || 0;
-        div.innerHTML = `<div style="display:flex;align-items:flex-start;gap:6px;width:100%;"><div class="msg-avatar" style="background:${color}22;color:${color};border-color:${color}40;">${avatar}</div><div class="msg-content"><div class="msg-header"><span class="msg-user" style="color:${color};">${escapeHtml(msg.user)}${msg.isAdmin ? ' 👑' : ''}</span><span class="msg-time">${formatTime(msg.createdAt)}</span></div><span class="msg-text">${text}</span><div class="msg-actions"><button class="msg-like-btn ${liked ? 'liked' : ''}" onclick="likeMessage('${msgId}', this)">${liked ? '❤️' : '🤍'} <span class="msg-like-count">${count}</span></button></div></div></div>`;
+        div.innerHTML =
+          `<div style="display:flex;align-items:flex-start;gap:6px;width:100%;">
+            <div class="msg-avatar" style="background:${color}22;color:${color};border-color:${color}40;">${avatar}</div>
+            <div class="msg-content">
+              <div class="msg-header">
+                <span class="msg-user" style="color:${color};">${escapeHtml(msg.user)}${msg.isAdmin ? ' 👑' : ''}</span>
+                <span class="msg-time">${formatTime(msg.createdAt)}</span>
+              </div>
+              <span class="msg-text">${text}</span>
+              <div class="msg-actions">
+                <button class="msg-like-btn ${liked ? 'liked' : ''}" onclick="likeMessage('${msgId}', this)">
+                  ${liked ? '❤️' : '🤍'} <span class="msg-like-count">${count}</span>
+                </button>
+              </div>
+            </div>
+          </div>`;
       }
       container.appendChild(div);
       limitChatMessages(container);
@@ -1277,13 +2205,29 @@
         const toRemove = total - 10;
         for (let i = 0; i < toRemove; i++) {
           const msg = messages[i];
-          if (msg) { msg.classList.add('removing'); setTimeout(() => { if (msg.parentNode) msg.remove(); }, 400); }
+          if (msg) {
+            msg.classList.add('removing');
+            setTimeout(() => {
+              if (msg.parentNode) msg.remove();
+            }, 400);
+          }
         }
       }
     }
 
-    function scrollChatToBottom() { const container = document.getElementById('chatMessagesInner'); if (container) container.scrollTop = container.scrollHeight; }
-    function likeMessage(msgId, btn) { if (!currentRoom) { toast('Entre em uma sala para curtir', 'error'); return; } socket.emit('likeMessage', { messageId: msgId, room: currentRoom }); }
+    function scrollChatToBottom() {
+      const container = document.getElementById('chatMessagesInner');
+      if (container) container.scrollTop = container.scrollHeight;
+    }
+
+    function likeMessage(msgId, btn) {
+      if (!currentRoom) {
+        toast('Entre em uma sala para curtir', 'error');
+        return;
+      }
+      socket.emit('likeMessage', { messageId: msgId, room: currentRoom });
+    }
+
     function updateLikeDisplay(msgId) {
       const likeData = messageLikesSync[msgId];
       if (!likeData) return;
@@ -1293,7 +2237,12 @@
       if (!container) return;
       const msgElements = container.querySelectorAll('.msg');
       let target = null;
-      for (const el of msgElements) { if (el.dataset.msgId === msgId) { target = el; break; } }
+      for (const el of msgElements) {
+        if (el.dataset.msgId === msgId) {
+          target = el;
+          break;
+        }
+      }
       if (!target) return;
       const btn = target.querySelector('.msg-like-btn');
       if (!btn) return;
@@ -1301,28 +2250,67 @@
       if (liked) btn.classList.add('liked');
       else btn.classList.remove('liked');
     }
-    function sendMessage() { const input = $('chatInput'); const text = input.value.trim(); if (!text) return; socket.emit('chat', { text: censorText(text) }); input.value = ''; }
-    function toggleEmojis() { $('emojiPanel').classList.toggle('show'); }
-    function insertEmoji(e) { $('chatInput').value += e; $('chatInput').focus(); $('emojiPanel').classList.remove('show'); }
+
+    function sendMessage() {
+      const input = $('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      socket.emit('chat', { text: censorText(text) });
+      input.value = '';
+    }
+
+    function toggleEmojis() {
+      $('emojiPanel').classList.toggle('show');
+    }
+
+    function insertEmoji(e) {
+      $('chatInput').value += e;
+      $('chatInput').focus();
+      $('emojiPanel').classList.remove('show');
+    }
 
     document.addEventListener('keydown', (e) => {
       const roomActive = document.getElementById('screen-room').classList.contains('active');
       if (!roomActive) return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'ArrowUp') { e.preventDefault(); const v = Math.min(100, parseInt($('volumeSlider').value) + 5); $('volumeSlider').value = v; setVolume(v); }
-      if (e.key === 'ArrowDown') { e.preventDefault(); const v = Math.max(0, parseInt($('volumeSlider').value) - 5); $('volumeSlider').value = v; setVolume(v); }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const v = Math.min(100, parseInt($('volumeSlider').value) + 5);
+        $('volumeSlider').value = v;
+        setVolume(v);
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const v = Math.max(0, parseInt($('volumeSlider').value) - 5);
+        $('volumeSlider').value = v;
+        setVolume(v);
+      }
     });
 
-    // ===== SOCKET EVENTS =====
-    socket.on('adminUsersUpdated', () => { if (amIAdmin) loadAdminUsers(); });
-    socket.on('userPoints', (data) => { if (data) { myPoints = data.points || 0; myBadges = data.badges || []; updateUserInfo(); } });
+    // ==================== SOCKET EVENTS ====================
+    socket.on('adminUsersUpdated', () => {
+      if (amIAdmin) loadAdminUsers();
+    });
+
+    socket.on('userPoints', (data) => {
+      if (data) {
+        myPoints = data.points || 0;
+        myBadges = data.badges || [];
+        updateUserInfo();
+      }
+    });
+
     socket.on('roomState', (state) => {
       const prev = currentRoomData?.queue?.[currentRoomData.currentIndex]?.id;
       const next = state.queue?.[state.currentIndex]?.id;
-      if (next !== prev) { currentTrackId = null; if (next) setTimeout(startCrossfade, 1000); }
+      if (next !== prev) {
+        currentTrackId = null;
+        if (next) setTimeout(startCrossfade, 1000);
+      }
       currentRoomData = state;
       syncPlayer(state);
     });
+
     socket.on('queueEmpty', () => {
       currentTrackId = null;
       $('trackTitle').textContent = 'Fila vazia';
@@ -1333,29 +2321,123 @@
       $('currentTime').textContent = '0:00';
       $('totalTime').textContent = '0:00';
       $('nextTrack').style.display = 'none';
-      try { player.stopVideo(); } catch(e) {}
+      try { player.stopVideo(); } catch (e) {}
       renderQueue([], 0);
       toast('Fila encerrada! Adicione músicas.', 'success');
     });
-    socket.on('users', (users) => { $('userCount').textContent = users.length; });
-    socket.on('chat', renderMessage);
-    socket.on('chatHistory', (messages) => { const container = document.getElementById('chatMessagesInner'); if (!container) return; container.innerHTML = ''; const start = Math.max(0, messages.length - 10); messages.slice(start).forEach(m => renderMessage(m)); scrollChatToBottom(); });
-    socket.on('likeUpdate', (data) => { const { messageId, likes, users } = data; messageLikesSync[messageId] = { likes, users }; updateLikeDisplay(messageId); });
-    socket.on('likesState', (likesData) => { messageLikesSync = likesData || {}; const container = document.getElementById('chatMessagesInner'); if (!container) return; const msgElements = container.querySelectorAll('.msg'); for (const el of msgElements) { const msgId = el.dataset.msgId; if (msgId && messageLikesSync[msgId]) updateLikeDisplay(msgId); } });
-    socket.on('voteUpdate', (data) => { const { index, up, down } = data; queueVotes[index] = { up, down }; if (down.length >= DISLIKE_THRESHOLD) { toast(`👎 Música removida por votação! (${down.length} votos negativos)`, 'error'); if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex); } else { if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex); } });
-    socket.on('votesState', (votesData) => { queueVotes = votesData || {}; if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex); });
-    socket.on('error', (msg) => toast(msg, 'error'));
-    socket.on('isAdmin', (isAdmin) => { amIAdmin = isAdmin || currentUser?.email === 'admin@sonora.com'; if (amIAdmin) { $('adminBadge').classList.remove('hidden'); toast('Você é admin desta sala!', 'success'); } checkAdmin(); });
-    socket.on('kicked', (msg) => { alert(msg); leaveRoom(); });
-    socket.on('banned', (msg) => { alert(msg); leaveRoom(); });
-    socket.on('chatCleared', () => { const container = document.getElementById('chatMessagesInner'); if (container) { container.innerHTML = ''; const div = document.createElement('div'); div.className = 'msg msg-system'; div.innerHTML = '<span class="msg-text">🧹 Chat limpo pelo admin</span>'; container.appendChild(div); } toast('Chat limpo!', 'success'); });
-    socket.on('adminBroadcast', (data) => { toast(`📢 ${data.message}`, 'success'); if (currentRoom) { const msg = { user: '📢 Admin', text: data.message, isSystem: true, createdAt: new Date() }; renderMessage(msg); } });
-    socket.on('roomClosed', (msg) => { alert(msg); leaveRoom(); });
-    socket.on('skipVoteUpdate', ({ votes, needed }) => { toast(`🗳️ Votos para pular: ${votes}/${needed}`, 'success'); });
-    socket.on('waitingRoom', ({ position, maxListeners, canJoin }) => { if (canJoin) { toast('🟢 Uma vaga foi liberada! Tentando entrar...', 'success'); joinRoom(currentRoom); } else { toast(`⏳ Você está na fila de espera (posição ${position}). Aguarde uma vaga.`, 'error'); } });
-    socket.on('playSound', (type) => { playSound(type); });
 
-    // ===== PROGRESS BAR =====
+    socket.on('users', (users) => {
+      $('userCount').textContent = users.length;
+    });
+
+    socket.on('chat', renderMessage);
+
+    socket.on('chatHistory', (messages) => {
+      const container = document.getElementById('chatMessagesInner');
+      if (!container) return;
+      container.innerHTML = '';
+      const start = Math.max(0, messages.length - 10);
+      messages.slice(start).forEach(m => renderMessage(m));
+      scrollChatToBottom();
+    });
+
+    socket.on('likeUpdate', (data) => {
+      const { messageId, likes, users } = data;
+      messageLikesSync[messageId] = { likes, users };
+      updateLikeDisplay(messageId);
+    });
+
+    socket.on('likesState', (likesData) => {
+      messageLikesSync = likesData || {};
+      const container = document.getElementById('chatMessagesInner');
+      if (!container) return;
+      const msgElements = container.querySelectorAll('.msg');
+      for (const el of msgElements) {
+        const msgId = el.dataset.msgId;
+        if (msgId && messageLikesSync[msgId]) updateLikeDisplay(msgId);
+      }
+    });
+
+    socket.on('voteUpdate', (data) => {
+      const { index, up, down } = data;
+      queueVotes[index] = { up, down };
+      if (down.length >= DISLIKE_THRESHOLD) {
+        toast(`👎 Música removida por votação! (${down.length} votos negativos)`, 'error');
+        if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex);
+      } else {
+        if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex);
+      }
+    });
+
+    socket.on('votesState', (votesData) => {
+      queueVotes = votesData || {};
+      if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex);
+    });
+
+    socket.on('error', (msg) => toast(msg, 'error'));
+
+    socket.on('isAdmin', (isAdmin) => {
+      amIAdmin = isAdmin || currentUser?.email === 'admin@sonora.com';
+      if (amIAdmin) {
+        $('adminBadge').classList.remove('hidden');
+        toast('Você é admin desta sala!', 'success');
+      }
+      checkAdmin();
+    });
+
+    socket.on('kicked', (msg) => {
+      alert(msg);
+      leaveRoom();
+    });
+
+    socket.on('banned', (msg) => {
+      alert(msg);
+      leaveRoom();
+    });
+
+    socket.on('chatCleared', () => {
+      const container = document.getElementById('chatMessagesInner');
+      if (container) {
+        container.innerHTML = '';
+        const div = document.createElement('div');
+        div.className = 'msg msg-system';
+        div.innerHTML = '<span class="msg-text">🧹 Chat limpo pelo admin</span>';
+        container.appendChild(div);
+      }
+      toast('Chat limpo!', 'success');
+    });
+
+    socket.on('adminBroadcast', (data) => {
+      toast(`📢 ${data.message}`, 'success');
+      if (currentRoom) {
+        const msg = { user: '📢 Admin', text: data.message, isSystem: true, createdAt: new Date() };
+        renderMessage(msg);
+      }
+    });
+
+    socket.on('roomClosed', (msg) => {
+      alert(msg);
+      leaveRoom();
+    });
+
+    socket.on('skipVoteUpdate', ({ votes, needed }) => {
+      toast(`🗳️ Votos para pular: ${votes}/${needed}`, 'success');
+    });
+
+    socket.on('waitingRoom', ({ position, maxListeners, canJoin }) => {
+      if (canJoin) {
+        toast('🟢 Uma vaga foi liberada! Tentando entrar...', 'success');
+        joinRoom(currentRoom);
+      } else {
+        toast(`⏳ Você está na fila de espera (posição ${position}). Aguarde uma vaga.`, 'error');
+      }
+    });
+
+    socket.on('playSound', (type) => {
+      playSound(type);
+    });
+
+    // ==================== PROGRESS BAR ====================
     setInterval(() => {
       if (!player || !player.getCurrentTime) return;
       try {
@@ -1366,10 +2448,10 @@
           $('currentTime').textContent = formatDuration(current);
           $('totalTime').textContent = formatDuration(duration);
         }
-      } catch(e) {}
+      } catch (e) {}
     }, 1000);
 
-    // ===== INIT =====
+    // ==================== INIT ====================
     function init() {
       setLanguage(currentLang);
       applyTheme();
@@ -1377,7 +2459,10 @@
       const room = params.get('room');
       if (room) pendingRoomAfterLogin = room;
       fetch('/api/me')
-        .then(res => { if (res.ok) return res.json(); throw new Error('Não autenticado'); })
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error('Não autenticado');
+        })
         .then(data => {
           if (data.success && data.user) {
             currentUser = data.user;
@@ -1385,7 +2470,10 @@
             myAvatar = currentUser.avatar || '🎸';
             myPoints = currentUser.points || 0;
             myBadges = currentUser.badges || [];
-            if (currentUser.theme) { currentTheme = currentUser.theme; applyTheme(); }
+            if (currentUser.theme) {
+              currentTheme = currentUser.theme;
+              applyTheme();
+            }
             $('landingScreen').style.display = 'none';
             hideLogin();
             showScreen('lobby');
@@ -1394,7 +2482,11 @@
             checkAdmin();
             loadFavorites();
             toast('Bem-vindo(a) ' + myName + '!', 'success');
-            if (pendingRoomAfterLogin) { const s = pendingRoomAfterLogin; pendingRoomAfterLogin = null; setTimeout(() => joinRoom(s), 1000); }
+            if (pendingRoomAfterLogin) {
+              const s = pendingRoomAfterLogin;
+              pendingRoomAfterLogin = null;
+              setTimeout(() => joinRoom(s), 1000);
+            }
           }
         })
         .catch(() => {
@@ -1405,6 +2497,12 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       init();
-      setInterval(() => { if (document.getElementById('screen-lobby').classList.contains('active')) { loadRooms(); } }, 15000);
+      setInterval(() => {
+        if (document.getElementById('screen-lobby').classList.contains('active')) {
+          loadRooms();
+        }
+      }, 15000);
     });
   </script>
+</body>
+</html>
