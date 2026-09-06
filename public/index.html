@@ -1,0 +1,2221 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sonora Fan — A melhor Vibe</title>
+  <script src="/socket.io/socket.io.js"></script>
+  
+  <!-- ===== CONFIGURAÇÃO FIREBASE ===== -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAF1I-hhlJeiaAWNj6Ze7B6KMP1-iyOBWU",
+      authDomain: "sonorafan-777.firebaseapp.com",
+      databaseURL: "https://sonorafan-777-default-rtdb.firebaseio.com",
+      projectId: "sonorafan-777",
+      storageBucket: "sonorafan-777.firebasestorage.app",
+      messagingSenderId: "790544929713",
+      appId: "1:790544929713:web:aa42cb147b7c4ecfe2a390"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <style>
+    /* ===== ESTILOS GLOBAIS ===== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #050508; --bg-elevated: #0a0a10; --bg-card: #0f0f18; --bg-hover: #161620;
+      --border: #1e1e2e; --border-hover: #2a2a3e; --text: #f0f0f8; --text-secondary: #9a9ab0;
+      --text-muted: #555570; --accent: #ff6b35; --accent2: #7c3aed; --success: #22c55e;
+      --danger: #ef4444; --warning: #f59e0b; --radius: 16px; --radius-sm: 12px;
+      --bg-image: none; --bg-overlay: transparent; --accent-glow: rgba(255,107,53,0.3);
+      --accent2-glow: rgba(124,58,237,0.3);
+    }
+    html, body { overflow: hidden; height: 100%; max-height: 100%; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text);
+      min-height: 100vh; max-height: 100vh; overflow: hidden;
+      background-image: var(--bg-image); background-size: cover; background-position: center;
+      display: flex; flex-direction: column;
+    }
+    body::before { content: ''; position: fixed; inset: 0; background: var(--bg-overlay); pointer-events: none; z-index: -1; }
+    * { scrollbar-width: thin; scrollbar-color: var(--accent) var(--bg-elevated); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 10px; }
+    *:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ===== PARTICLES ===== */
+    .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .particle { position: absolute; width: 4px; height: 4px; border-radius: 50%; animation: float 8s linear infinite; opacity: 0; }
+    .particle:nth-child(2n) { background: var(--accent2); animation-duration: 10s; animation-delay: 1s; left: 20%; }
+    .particle:nth-child(3n) { background: var(--success); animation-duration: 12s; animation-delay: 2s; left: 40%; }
+    .particle:nth-child(4n) { background: var(--warning); animation-duration: 9s; animation-delay: 3s; left: 60%; }
+    .particle:nth-child(5n) { background: var(--accent); animation-duration: 11s; animation-delay: 4s; left: 80%; }
+    .particle:nth-child(6n) { background: var(--accent2); animation-duration: 13s; animation-delay: 0.5s; left: 10%; }
+    .particle:nth-child(7n) { background: var(--danger); animation-duration: 7s; animation-delay: 2.5s; left: 30%; }
+    .particle:nth-child(8n) { background: var(--accent); animation-duration: 14s; animation-delay: 1.5s; left: 50%; }
+    .particle:nth-child(9n) { background: var(--accent2); animation-duration: 6s; animation-delay: 3.5s; left: 70%; }
+    .particle:nth-child(10n) { background: var(--warning); animation-duration: 15s; animation-delay: 5s; left: 90%; }
+    @keyframes float { 0%,100% { transform: translateY(0) rotate(0deg); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 50% { transform: translateY(-100vh) rotate(180deg); } }
+
+    /* ===== LANDING PAGE ===== */
+    .landing-screen { position: relative; z-index: 90; flex: 1; overflow-y: auto; background: transparent; }
+    .landing-inner { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 48px 24px 40px; }
+
+    .landing-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 60px; flex-wrap: wrap; gap: 16px; }
+    .landing-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+    .landing-logo span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .landing-nav-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .landing-nav-actions .lang-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; color: var(--text-muted); cursor: pointer; font-size: 12px; font-family: inherit; transition: all 0.15s; }
+    .landing-nav-actions .lang-btn:hover { border-color: var(--accent2); color: var(--text); }
+    .landing-nav-actions .lang-btn.active { border-color: var(--accent); color: var(--text); background: rgba(255,107,53,0.1); }
+    .landing-nav-actions .btn-outline { padding: 8px 20px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .landing-nav-actions .btn-outline:hover { border-color: var(--accent2); color: var(--text); background: var(--bg-hover); }
+    .landing-nav-actions .btn-primary { padding: 8px 24px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); background-size: 200% 200%; animation: gradientMove 3s ease infinite, pulseGlow 2s infinite; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: inherit; box-shadow: 0 0 15px rgba(124,58,237,0.3); }
+    .landing-nav-actions .btn-primary:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 30px rgba(124,58,237,0.5); }
+    @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(124,58,237,0.4); } 70% { box-shadow: 0 0 0 15px rgba(124,58,237,0); } 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); } }
+
+    .landing-hero { position: relative; border-radius: var(--radius); overflow: hidden; margin-bottom: 60px; }
+    .landing-hero .hero-bg { position: absolute; inset: 0; background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTY3lRWnq5v01NPP0PcZxUJwQRlJvBVy4QsGPWxZKltu-NjR5FGbVSVpYo&s=10'); background-size: cover; background-position: center; filter: brightness(0.55) saturate(1.1); transform: scale(1.02); }
+    .landing-hero .hero-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); }
+    .landing-hero-content { position: relative; z-index: 2; padding: 80px 50px; max-width: 700px; }
+    .landing-hero-content h1 { font-size: 52px; font-weight: 900; line-height: 1.1; color: #fff; text-shadow: 0 4px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
+    .landing-hero-content h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .landing-hero-content p { color: rgba(255,255,255,0.85); font-size: 20px; line-height: 1.6; margin-bottom: 32px; max-width: 500px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+    .landing-hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+    .landing-hero-ctas .btn-hero-secondary { padding: 16px 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.2); color: #fff; font-weight: 600; font-size: 18px; cursor: pointer; transition: all 0.2s; font-family: inherit; backdrop-filter: blur(4px); }
+    .landing-hero-ctas .btn-hero-secondary:hover { background: rgba(255,255,255,0.1); border-color: var(--accent2); }
+    .landing-hero-ctas .btn-hero-primary { padding: 16px 40px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); background-size: 200% 200%; animation: gradientMove 3s ease infinite, pulseGlow 2s infinite; color: #fff; font-weight: 700; font-size: 18px; cursor: pointer; transition: all 0.2s; font-family: inherit; box-shadow: 0 0 20px rgba(124,58,237,0.3); }
+    .landing-hero-ctas .btn-hero-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 40px rgba(124,58,237,0.5); }
+
+    .landing-features-title { text-align: center; font-size: 38px; font-weight: 800; margin-bottom: 12px; }
+    .landing-features-sub { text-align: center; color: var(--text-secondary); font-size: 18px; margin-bottom: 48px; }
+    .landing-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 60px; }
+    .landing-feature-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 36px 28px; text-align: center; transition: all 0.3s; }
+    .landing-feature-card:hover { border-color: var(--accent2); transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+    .landing-feature-card .icon { font-size: 52px; display: block; margin-bottom: 16px; }
+    .landing-feature-card h3 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    .landing-feature-card p { color: var(--text-secondary); font-size: 15px; line-height: 1.7; }
+
+    .landing-cta-band { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 48px 32px; text-align: center; position: relative; overflow: hidden; margin-bottom: 40px; }
+    .landing-cta-band::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent)); }
+    .landing-cta-band h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; }
+    .landing-cta-band p { color: var(--text-secondary); font-size: 18px; margin-bottom: 28px; }
+    .landing-cta-band .btn-cta { padding: 16px 48px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); background-size: 200% 200%; animation: gradientMove 3s ease infinite, pulseGlow 2s infinite; color: #fff; font-weight: 700; font-size: 18px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .landing-cta-band .btn-cta:hover { transform: translateY(-3px) scale(1.02); }
+
+    @media (max-width: 992px) { .landing-features { grid-template-columns: 1fr 1fr; } .landing-hero-content { padding: 60px 30px; } .landing-hero-content h1 { font-size: 40px; } }
+    @media (max-width: 600px) { .landing-hero-content { padding: 40px 20px; } .landing-hero-content h1 { font-size: 30px; } .landing-features { grid-template-columns: 1fr; } .landing-nav { flex-direction: column; align-items: stretch; } .landing-nav-actions { justify-content: center; } .landing-cta-band h2 { font-size: 24px; } .landing-cta-band p { font-size: 16px; } }
+
+    /* ===== LOGIN ===== */
+    .login-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(8px); }
+    .login-screen.active { display: flex; }
+    .login-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 48px 40px; text-align: center; max-width: 420px; width: 92%; max-height: 92vh; overflow-y: auto; position: relative; }
+    .login-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: var(--radius) var(--radius) 0 0; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent)); }
+    .login-card .logo { font-size: 56px; margin-bottom: 12px; }
+    .login-card h1 { font-size: 32px; font-weight: 800; margin-bottom: 6px; }
+    .login-card h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .login-card p { color: var(--text-secondary); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+    .login-card input { width: 100%; padding: 14px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; outline: none; margin-bottom: 12px; transition: all 0.2s; font-family: inherit; }
+    .login-card input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+    .login-card .login-error { color: var(--danger); font-size: 13px; margin-bottom: 12px; display: none; }
+    .login-card .login-error.show { display: block; }
+    .login-card button { width: 100%; padding: 16px; border-radius: var(--radius-sm); border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .login-card button:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(124,58,237,0.3); }
+    .login-card button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .login-switch { margin-top: 16px; color: var(--text-muted); font-size: 13px; }
+    .login-switch a { color: var(--accent); cursor: pointer; font-weight: 600; text-decoration: none; }
+
+    /* ===== MODAIS ===== */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 90%; max-width: 480px; max-height: 92vh; overflow-y: auto; position: relative; animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: var(--radius) var(--radius) 0 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    .modal h3 { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+    .modal input, .modal select { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; outline: none; margin-bottom: 14px; font-family: inherit; transition: all 0.2s; }
+    .modal input:focus, .modal select:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+    .form-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; margin-top: 14px; }
+    .form-label:first-of-type { margin-top: 0; }
+    .form-label .required { color: var(--danger); margin-left: 2px; }
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+    .chip { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .chip:hover { border-color: var(--border-hover); }
+    .chip.selected { border-color: var(--accent); background: rgba(255,107,53,0.15); color: var(--text); }
+    .form-error { color: var(--danger); font-size: 12px; margin-top: -10px; margin-bottom: 10px; display: none; }
+    .form-error.show { display: block; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+    .modal-actions button { padding: 10px 20px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .modal-actions .btn-secondary { background: var(--bg); color: var(--text-secondary); border: 1px solid var(--border); }
+    .modal-actions .btn-secondary:hover { background: var(--bg-hover); }
+    .modal-actions .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+    .modal-actions .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,0.3); }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(30px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    /* ===== ADMIN PANEL ===== */
+    .admin-panel { max-width: 700px !important; max-height: 90vh; overflow-y: auto !important; }
+    .admin-panel .tab-bar { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .admin-panel .tab-bar button { background: transparent; border: none; padding: 8px 16px; color: var(--text-muted); font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .admin-panel .tab-bar button:hover { color: var(--text); }
+    .admin-panel .tab-bar button.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .admin-tab { display: none; }
+    .admin-tab.active { display: block; }
+    .admin-user-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); margin-bottom: 4px; }
+    .admin-user-item .name { font-weight: 600; font-size: 13px; color: var(--text); }
+    .admin-user-item .email { font-size: 12px; color: var(--text-muted); }
+    .admin-user-item .actions { display: flex; gap: 6px; }
+    .admin-user-item .actions button { padding: 2px 10px; border-radius: 4px; border: none; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .admin-user-item .actions .promote { background: var(--accent2); color: #fff; }
+    .admin-user-item .actions .delete { background: var(--danger); color: #fff; }
+    .admin-badge-mini { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; padding: 1px 8px; border-radius: 8px; font-size: 9px; font-weight: 700; margin-left: 4px; }
+    .admin-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .admin-action-grid button { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); cursor: pointer; font-family: inherit; font-weight: 600; font-size: 12px; transition: all 0.15s; }
+    .admin-action-grid button:hover { background: var(--bg-hover); border-color: var(--accent); }
+
+    /* ===== APP ===== */
+    .app { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; max-height: 100%; overflow: hidden; }
+    .hidden { display: none !important; }
+    .screen { display: none; flex-direction: column; flex: 1; height: 100%; max-height: 100%; overflow: hidden; }
+    .screen.active { display: flex; height: 100%; max-height: 100%; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); flex-shrink: 0; z-index: 50; flex-wrap: wrap; gap: 8px; }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header h1 { font-size: 18px; font-weight: 700; }
+    .header h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .user-info { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 10px; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+    .logout-btn { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 12px; cursor: pointer; transition: all 0.15s; font-weight: 500; font-family: inherit; }
+    .logout-btn:hover { background: rgba(239,68,68,0.1); border-color: var(--danger); color: var(--danger); }
+    .admin-toggle-btn, .theme-toggle-btn, .action-btn { background: transparent; border: 1px solid var(--border); border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-family: inherit; background: var(--bg-card); }
+    .admin-toggle-btn:hover, .theme-toggle-btn:hover, .action-btn:hover { background: var(--bg-hover); border-color: var(--accent2); transform: scale(1.05); }
+    .admin-badge { background: linear-gradient(135deg, var(--accent), var(--accent2)); padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #fff; }
+    .admin-badge.hidden { display: none; }
+
+    /* ===== LOBBY ===== */
+    .lobby { padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; flex: 1; overflow-y: auto; }
+    .lobby-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+    .lobby-top h2 { font-size: 24px; font-weight: 700; }
+    .lobby-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .lobby-actions button { padding: 10px 20px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+    .lobby-actions button:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(124,58,237,0.3); }
+    .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .room-card { background: var(--bg-card); border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; position: relative; }
+    .room-card:hover { border-color: var(--border-hover); transform: translateY(-6px) scale(1.01); box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+    .room-card.live { border-color: var(--accent); animation: pulse-border 2s infinite; }
+    @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(255,107,53,0.3); } 70% { box-shadow: 0 0 0 12px rgba(255,107,53,0); } 100% { box-shadow: 0 0 0 0 rgba(255,107,53,0); } }
+    .room-card .room-thumb { position: relative; width: 100%; aspect-ratio: 16 / 9; background: linear-gradient(135deg, var(--accent2-glow), var(--accent-glow)); overflow: hidden; }
+    .room-card .room-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
+    .room-card:hover .room-thumb img { transform: scale(1.05); }
+    .room-listeners-badge { position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 4px; padding: 4px 10px 4px 8px; border-radius: 20px; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); font-size: 12px; font-weight: 700; color: var(--text); z-index: 2; }
+    .room-live-badge { position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: rgba(220,38,38,0.9); backdrop-filter: blur(8px); font-size: 10px; font-weight: 700; color: #fff; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px; }
+    .room-live-badge .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: pulse 1.5s infinite; }
+    .playing-indicator { position: absolute; bottom: 10px; left: 10px; display: flex; align-items: flex-end; gap: 3px; height: 20px; z-index: 2; background: rgba(0,0,0,0.5); padding: 3px 6px; border-radius: 4px; }
+    .playing-indicator span { display: block; width: 3px; background: var(--accent); border-radius: 2px; animation: sound 0.8s ease-in-out infinite alternate; }
+    .playing-indicator span:nth-child(1) { height: 6px; animation-delay: 0.1s; }
+    .playing-indicator span:nth-child(2) { height: 12px; animation-delay: 0.3s; }
+    .playing-indicator span:nth-child(3) { height: 8px; animation-delay: 0.5s; }
+    .playing-indicator span:nth-child(4) { height: 16px; animation-delay: 0.2s; }
+    @keyframes sound { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }
+    .room-card-body { padding: 16px 18px 18px; }
+    .room-card-body h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .room-card-body .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--text-muted); align-items: center; }
+    .room-card-body .meta .genre-tag { background: var(--bg-hover); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+    .room-card-body .meta .listeners { display: flex; align-items: center; gap: 4px; }
+    .room-card-body .meta .listeners .count { font-weight: 700; color: var(--text-secondary); }
+    .room-card .room-avatars { display: flex; margin-top: 8px; gap: 2px; }
+    .room-card .room-avatars .avatar-mini { width: 24px; height: 24px; border-radius: 50%; background: var(--bg); border: 2px solid var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 12px; margin-left: -4px; }
+    .room-card .room-avatars .avatar-mini:first-child { margin-left: 0; }
+    .room-card .event-badge { background: var(--warning); color: #000; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; margin-left: 6px; }
+
+    /* ===== TOAST ===== */
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); background: var(--bg-card); border: 1px solid var(--border); color: var(--text); padding: 14px 28px; border-radius: var(--radius-sm); font-size: 14px; z-index: 300; opacity: 0; transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none; font-weight: 500; box-shadow: 0 10px 40px rgba(0,0,0,0.4); max-width: 90%; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.error { border-color: var(--danger); color: #fca5a5; }
+    .toast.success { border-color: var(--success); color: #86efac; }
+
+    /* ===== ROOM LAYOUT ===== */
+    .room-layout { display: grid; grid-template-columns: 1fr 1.2fr 1fr; grid-template-rows: 1fr; gap: 0; flex: 1; min-height: 0; height: 100%; max-height: 100%; overflow: hidden; }
+    .queue-column { border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg); overflow: hidden; height: 100%; min-height: 0; }
+    .queue-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: rgba(0,0,0,0.2); }
+    .queue-header span { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .queue-header .count { color: var(--text-muted); font-size: 12px; font-weight: 600; }
+    .queue-list { flex: 1; overflow-y: auto; padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 4px; min-height: 0; height: 100%; }
+    .waiting-queue-label { font-size: 11px; color: var(--warning); margin: 8px 0 4px 8px; font-weight: 600; }
+
+    .player-column { display: flex; flex-direction: column; padding: 16px 20px; gap: 16px; overflow-y: auto; background: rgba(0,0,0,0.2); height: 100%; min-height: 0; }
+    .player-section { border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); overflow: hidden; flex-shrink: 0; }
+    .add-song-area { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+
+    .chat-column { border-left: 1px solid var(--border); display: flex; flex-direction: column; background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); height: 100%; min-height: 0; overflow: hidden; }
+    .users-panel { padding: 12px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: rgba(0,0,0,0.2); }
+    .users-panel .user-count { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: 14px; font-weight: 600; }
+    .users-panel .user-count .icon { font-size: 18px; }
+    .chat-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+
+    @media (max-width: 1024px) { .room-layout { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr; } .queue-column { border-right: none; border-bottom: 1px solid var(--border); max-height: 33%; } .player-column { max-height: 34%; padding: 12px 16px; } .chat-column { border-left: none; border-top: 1px solid var(--border); max-height: 33%; } }
+    @media (max-width: 768px) { .room-layout { grid-template-rows: 0.9fr 0.9fr 0.9fr; } .queue-column { max-height: 30%; } .player-column { max-height: 40%; } .chat-column { max-height: 30%; } .header { padding: 8px 12px; } .header h1 { font-size: 15px; } }
+
+    /* ===== COMPONENTES ===== */
+    .queue-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; transition: all 0.2s; cursor: default; border-left: 3px solid transparent; flex-wrap: wrap; flex-shrink: 0; }
+    .queue-item:hover { background: var(--bg-hover); }
+    .queue-item.current { background: var(--bg-hover); border-left-color: var(--accent); }
+    .queue-item .pos { font-size: 11px; color: var(--text-muted); min-width: 20px; text-align: center; font-weight: 600; }
+    .queue-item.current .pos { color: var(--accent); }
+    .queue-item .thumb { width: 36px; height: 27px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: var(--bg); }
+    .queue-item .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .queue-item .info { flex: 1; min-width: 80px; }
+    .queue-item .info .title { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .queue-item.current .info .title { color: var(--text); font-weight: 600; }
+    .queue-item .info .artist { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .queue-item .dj { font-size: 9px; color: var(--text-muted); flex-shrink: 0; padding: 1px 6px; background: var(--bg); border-radius: 10px; }
+    .queue-item.dragging { opacity: 0.5; }
+    .queue-item.drag-over { border: 2px dashed var(--accent); }
+    .queue-item.waiting { opacity: 0.6; border-left-color: var(--warning); }
+
+    .queue-votes { display: flex; align-items: center; gap: 2px; background: var(--bg-elevated); padding: 2px 6px; border-radius: 12px; flex-shrink: 0; }
+    .vote-btn { background: transparent; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: all 0.2s; opacity: 0.6; line-height: 1; font-family: inherit; }
+    .vote-btn:hover { opacity: 1; transform: scale(1.1); }
+    .vote-btn.up:hover { color: var(--success); }
+    .vote-btn.down:hover { color: var(--danger); }
+    .vote-btn.voted-up { opacity: 1; color: var(--success); background: rgba(34,197,94,0.1); }
+    .vote-btn.voted-down { opacity: 1; color: var(--danger); background: rgba(239,68,68,0.1); }
+    .vote-count { font-size: 12px; font-weight: 700; min-width: 24px; text-align: center; color: var(--text-secondary); cursor: default; }
+    .vote-count.positive { color: var(--success); }
+    .vote-count.negative { color: var(--danger); }
+
+    #youtube-player { width: 100%; aspect-ratio: 16 / 9; background: #000; position: relative; }
+    .buffering-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 10; }
+    .buffering-overlay.show { display: flex; }
+    .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .player-info { display: flex; gap: 14px; align-items: center; padding: 14px 16px; }
+    .cover { width: 60px; height: 60px; border-radius: 10px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; overflow: hidden; border: 1px solid var(--border); }
+    .cover img { width: 100%; height: 100%; object-fit: cover; }
+    .track-info { flex: 1; min-width: 0; }
+    .track-title { font-size: 16px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-artist { font-size: 13px; color: var(--text-secondary); margin-top: 2px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-dj { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .track-actions { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+    .track-actions button { background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all 0.15s; font-family: inherit; display: flex; align-items: center; gap: 4px; }
+    .track-actions button:hover { background: var(--bg-hover); border-color: var(--accent2); }
+
+    .progress-section { padding: 0 16px 14px; }
+    .progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 3px; overflow: hidden; position: relative; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width 0.5s linear; }
+    .progress-time { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-muted); }
+    .volume-control { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .volume-control input[type="range"] { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; background: var(--border); border-radius: 2px; outline: none; cursor: pointer; }
+    .volume-control input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+
+    .add-song { display: flex; gap: 10px; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); flex-shrink: 0; }
+    .add-song input { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; outline: none; transition: all 0.2s; font-family: inherit; }
+    .add-song input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+    .add-song button { padding: 10px 20px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
+    .add-song button:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(124,58,237,0.3); }
+
+    .song-preview { display: flex; gap: 12px; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); align-items: center; flex-shrink: 0; }
+    .song-preview.hidden { display: none; }
+    .song-preview-thumb { width: 50px; height: 38px; border-radius: 6px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; overflow: hidden; position: relative; border: 1px solid var(--border); }
+    .song-preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .song-preview-duration { position: absolute; bottom: 2px; right: 2px; font-size: 9px; background: rgba(0,0,0,0.7); padding: 1px 4px; border-radius: 3px; color: #fff; }
+    .song-preview-info { flex: 1; min-width: 0; }
+    .song-preview-title { font-weight: 600; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-preview-artist { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-preview-status { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .song-preview-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .song-preview-actions.hidden { display: none; }
+    .song-preview-confirm { padding: 5px 12px; border-radius: 6px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-weight: 600; font-size: 12px; cursor: pointer; font-family: inherit; }
+    .song-preview-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+    .song-preview-confirm:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
+    .song-preview-cancel { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 12px; cursor: pointer; font-family: inherit; }
+    .song-preview-cancel:hover { background: var(--bg-hover); }
+    .song-preview-fav { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .song-preview-fav:hover { background: var(--bg-hover); border-color: var(--accent); color: var(--accent); }
+    .cooldown-text { font-size: 12px; color: var(--accent); text-align: center; padding: 6px; border-radius: 8px; background: rgba(255,107,53,0.1); border: 1px solid rgba(255,107,53,0.2); flex-shrink: 0; }
+    .cooldown-text.hidden { display: none; }
+
+    .search-results { display: none; flex-direction: column; gap: 6px; padding: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-height: 200px; overflow-y: auto; flex-shrink: 0; }
+    .search-results.show { display: flex; }
+    .search-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: background 0.15s; }
+    .search-item:hover { background: var(--bg-hover); }
+    .search-item img { width: 40px; height: 30px; border-radius: 4px; object-fit: cover; }
+    .search-item .info { flex: 1; min-width: 0; }
+    .search-item .info .title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .search-item .info .artist { font-size: 11px; color: var(--text-secondary); }
+
+    /* ===== CHAT ===== */
+    .chat-messages { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 0; min-height: 0; max-height: 100%; height: 100%; position: relative; }
+    .chat-messages-inner { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; scroll-behavior: smooth; min-height: 0; max-height: 100%; }
+    .chat-messages-inner::-webkit-scrollbar { width: 0px; background: transparent; }
+    .chat-messages-inner { scrollbar-width: none; -ms-overflow-style: none; }
+
+    .pinned-message { background: rgba(124,58,237,0.15); border-left: 4px solid var(--accent2); padding: 10px 14px; margin: 4px 0 8px 0; border-radius: 8px; display: flex; align-items: flex-start; gap: 10px; flex-shrink: 0; }
+    .pinned-message .pin-icon { font-size: 16px; }
+    .pinned-message .content { flex: 1; font-size: 13px; color: var(--text-secondary); }
+    .pinned-message .content strong { color: var(--text); }
+    .pinned-message .remove-pin { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 2px; }
+
+    .msg { display: flex; gap: 8px; line-height: 1.5; padding: 4px 8px; border-radius: 8px; animation: msgIn 0.2s ease; flex-shrink: 0; transition: all 0.3s ease; }
+    .msg:hover { background: rgba(255,255,255,0.02); }
+    .msg.removing { opacity: 0; transform: translateY(-10px) scale(0.95); height: 0; padding: 0 8px; margin: 0; overflow: hidden; transition: all 0.4s ease; }
+    .msg-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; border: 2px solid transparent; }
+    .msg-content { flex: 1; min-width: 0; }
+    .msg-header { display: flex; align-items: center; gap: 6px; margin-bottom: 1px; }
+    .msg-user { font-weight: 700; font-size: 12px; cursor: pointer; }
+    .msg-time { font-size: 10px; color: var(--text-muted); opacity: 0.5; }
+    .msg-text { color: var(--text-secondary); word-break: break-word; font-size: 13px; }
+    .msg-system .msg-text { color: var(--text-muted); font-style: italic; font-size: 12px; }
+    .msg-music { background: rgba(124,58,237,0.05); border-radius: 8px; padding: 6px 10px; }
+    .msg-music .music-info { color: var(--text); font-weight: 600; font-size: 13px; margin-top: 2px; }
+    .msg-actions { display: flex; align-items: center; gap: 4px; margin-top: 2px; margin-left: 30px; }
+    .msg-like-btn { background: transparent; border: none; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 8px; color: var(--text-muted); transition: all 0.15s; display: flex; align-items: center; gap: 2px; font-family: inherit; }
+    .msg-like-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
+    .msg-like-btn.liked { color: var(--accent); background: rgba(255,107,53,0.1); }
+    .msg-like-count { font-size: 10px; font-weight: 600; }
+
+    .chat-input-bar { padding: 8px 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; background: var(--bg-card); flex-shrink: 0; position: relative; }
+    .chat-input-bar input { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; outline: none; transition: all 0.2s; font-family: inherit; }
+    .chat-input-bar input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+    .chat-input-bar button { padding: 8px 14px; border-radius: 8px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
+    .chat-input-bar button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,0.3); }
+    .emoji-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: background 0.15s; flex-shrink: 0; }
+    .emoji-btn:hover { background: var(--bg-hover); }
+    .emoji-panel { display: none; position: absolute; bottom: 100%; left: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px; max-width: 260px; max-height: 160px; overflow-y: auto; flex-wrap: wrap; gap: 3px; z-index: 50; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+    .emoji-panel.show { display: flex; }
+    .emoji-item { font-size: 20px; cursor: pointer; padding: 3px 5px; border-radius: 4px; transition: background 0.15s; line-height: 1; }
+    .emoji-item:hover { background: var(--bg-hover); }
+
+    /* ===== FOOTER ===== */
+    .footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); flex-shrink: 0; width: 100%; }
+    .footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .footer a:hover { text-decoration: underline; }
+    .footer .social-icons { display: flex; gap: 12px; align-items: center; }
+    .footer .social-icons a { display: flex; align-items: center; transition: transform 0.2s; }
+    .footer .social-icons a:hover { transform: scale(1.1); }
+    .footer .social-icons img { width: 28px; height: 28px; border-radius: 4px; object-fit: contain; background: #fff; padding: 4px; }
+
+    .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+    .favorite-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); margin-bottom: 6px; }
+    .favorite-item .info { flex: 1; min-width: 0; }
+    .favorite-item .title { font-weight: 600; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .favorite-item .artist { font-size: 11px; color: var(--text-secondary); }
+    .favorite-item .actions { display: flex; gap: 6px; }
+    .favorite-item .actions button { padding: 3px 8px; border-radius: 4px; border: none; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .favorite-item .actions .add { background: var(--accent2); color: #fff; }
+    .favorite-item .actions .add:hover { opacity: 0.8; }
+    .favorite-item .actions .remove { background: var(--danger); color: #fff; }
+    .favorite-item .actions .remove:hover { opacity: 0.8; }
+
+    .next-track { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); margin-top: 4px; flex-shrink: 0; }
+    .next-track .label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .next-track .thumb { width: 40px; height: 30px; border-radius: 4px; overflow: hidden; background: var(--bg); flex-shrink: 0; }
+    .next-track .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .next-track .info { flex: 1; min-width: 0; }
+    .next-track .title { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .next-track .artist { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .avatar-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 14px; }
+    .avatar-option { font-size: 28px; padding: 6px; text-align: center; border-radius: 10px; border: 2px solid transparent; cursor: pointer; transition: all 0.15s; background: var(--bg); }
+    .avatar-option:hover { border-color: var(--border-hover); transform: scale(1.05); }
+    .avatar-option.selected { border-color: var(--accent); background: rgba(255,107,53,0.1); }
+
+    @media (max-width: 480px) {
+      .player-column { padding: 10px 12px; }
+      #youtube-player { aspect-ratio: 16 / 9; }
+      .add-song { flex-direction: column; }
+      .add-song button { width: 100%; }
+      .song-preview { flex-wrap: wrap; }
+      .song-preview-actions { width: 100%; justify-content: flex-end; }
+      .landing-features { grid-template-columns: 1fr; }
+      .landing-hero-content h1 { font-size: 28px; }
+      .room-grid { grid-template-columns: 1fr; }
+      .footer { flex-direction: column; gap: 8px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <!-- PARTICLES -->
+  <div class="particles">
+    <div class="particle" style="bottom:-10%;left:5%;"></div>
+    <div class="particle" style="bottom:-10%;left:15%;"></div>
+    <div class="particle" style="bottom:-10%;left:25%;"></div>
+    <div class="particle" style="bottom:-10%;left:35%;"></div>
+    <div class="particle" style="bottom:-10%;left:45%;"></div>
+    <div class="particle" style="bottom:-10%;left:55%;"></div>
+    <div class="particle" style="bottom:-10%;left:65%;"></div>
+    <div class="particle" style="bottom:-10%;left:75%;"></div>
+    <div class="particle" style="bottom:-10%;left:85%;"></div>
+    <div class="particle" style="bottom:-10%;left:95%;"></div>
+  </div>
+
+  <!-- ===== LANDING PAGE ===== -->
+  <div class="landing-screen" id="landingScreen">
+    <div class="landing-inner">
+      <div class="landing-nav">
+        <div class="landing-logo">🎸 Sonora <span>Fan</span></div>
+        <div class="landing-nav-actions">
+          <button class="lang-btn active" data-lang="pt" onclick="setLanguage('pt')">PT</button>
+          <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+          <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+          <button class="btn-outline" onclick="showLogin()" data-i18n="hero.cta1">🎤 Entrar na sala</button>
+          <button class="btn-primary" onclick="openSignup()" data-i18n="hero.cta2">✍️ Criar conta</button>
+        </div>
+      </div>
+
+      <div class="landing-hero">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="landing-hero-content">
+          <h1 data-i18n="hero.title">A pista é sua.<br>A trilha sonora é <span>de todo mundo</span>.</h1>
+          <p data-i18n="hero.sub">Entre em uma sala, adicione suas músicas favoritas do YouTube e converse em tempo real com a galera.</p>
+          <div class="landing-hero-ctas">
+            <button class="btn-hero-secondary" onclick="showLogin()" data-i18n="hero.cta1">🎤 Entrar na sala</button>
+            <button class="btn-hero-primary" onclick="openSignup()" data-i18n="hero.cta2">✍️ Criar conta</button>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="landing-features-title" data-i18n="features.title">🎶 Como funciona</h2>
+      <p class="landing-features-sub" data-i18n="features.sub">Tudo o que você precisa para criar a vibe perfeita</p>
+      <div class="landing-features">
+        <div class="landing-feature-card">
+          <span class="icon">🎵</span>
+          <h3 data-i18n="feature1.title">Fila colaborativa</h3>
+          <p data-i18n="feature1.desc">Todo mundo adiciona música do YouTube, a fila toca em sincronia para todos.</p>
+        </div>
+        <div class="landing-feature-card">
+          <span class="icon">💬</span>
+          <h3 data-i18n="feature2.title">Chat ao vivo</h3>
+          <p data-i18n="feature2.desc">Comente as músicas, reaja com emojis e curta as escolhas da galera.</p>
+        </div>
+        <div class="landing-feature-card">
+          <span class="icon">🗳️</span>
+          <h3 data-i18n="feature3.title">Votação democrática</h3>
+          <p data-i18n="feature3.desc">Curta ou dispense músicas da fila. Com 10 votos negativos, a música sai!</p>
+        </div>
+      </div>
+
+      <div class="landing-cta-band">
+        <h2 data-i18n="band.title">Ainda não tem conta? Crie uma agora!</h2>
+        <p data-i18n="band.sub">Cadastre-se e entre nas salas para ouvir música com amigos.</p>
+        <button class="btn-cta" onclick="openSignup()" data-i18n="band.cta">Criar minha conta 🎵</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOGIN ===== -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="logo">🎸</div>
+      <h1>Sonora <span>Fan</span></h1>
+      <p data-i18n="login.sub">Entre com sua conta para acessar as salas.</p>
+      <div class="login-error" id="loginError" data-i18n="login.error">Credenciais inválidas.</div>
+      <input type="email" id="loginEmail" placeholder="E-mail" data-i18n-placeholder="login.email" onkeydown="if(event.key==='Enter') doLogin()">
+      <input type="password" id="loginPassword" placeholder="Senha" data-i18n-placeholder="login.password" onkeydown="if(event.key==='Enter') doLogin()">
+      <button id="loginBtn" onclick="doLogin()" data-i18n="login.btn">Entrar no palco</button>
+      <div class="login-switch"><span data-i18n="login.switch">Não tem conta?</span> <a onclick="openSignup()" data-i18n="login.signup">Cadastre-se</a></div>
+    </div>
+  </div>
+
+  <!-- ===== SIGNUP ===== -->
+  <div class="modal-overlay" id="signupModal">
+    <div class="modal">
+      <h3 data-i18n="signup.title">🎵 Criar conta</h3>
+      <label class="form-label" data-i18n="signup.name">Nome <span class="required">*</span></label>
+      <input type="text" id="signupNome" placeholder="Seu nome" maxlength="60" data-i18n-placeholder="signup.namePlaceholder">
+      <div class="form-error" id="signupNomeError" data-i18n="signup.nameError">Digite seu nome</div>
+      <label class="form-label" data-i18n="signup.email">E-mail <span class="required">*</span></label>
+      <input type="email" id="signupEmail" placeholder="voce@email.com" maxlength="120" data-i18n-placeholder="signup.emailPlaceholder">
+      <div class="form-error" id="signupEmailError" data-i18n="signup.emailError">Digite um e-mail válido</div>
+      <label class="form-label" data-i18n="signup.password">Senha <span class="required">*</span> <span class="hint">(mínimo 6 caracteres)</span></label>
+      <input type="password" id="signupPassword" placeholder="Crie uma senha" maxlength="30" data-i18n-placeholder="signup.passwordPlaceholder">
+      <div class="form-error" id="signupPasswordError" data-i18n="signup.passwordError">Mínimo 6 caracteres</div>
+      <label class="form-label" data-i18n="signup.style">Estilo musical <span class="required">*</span></label>
+      <div class="chip-group" id="signupStyles">
+        <div class="chip" data-style="sertanejo" onclick="toggleChip(this)">Sertanejo</div>
+        <div class="chip" data-style="funk" onclick="toggleChip(this)">Funk</div>
+        <div class="chip" data-style="pagode" onclick="toggleChip(this)">Pagode/Samba</div>
+        <div class="chip" data-style="mpb" onclick="toggleChip(this)">MPB</div>
+        <div class="chip" data-style="rock" onclick="toggleChip(this)">Rock</div>
+        <div class="chip" data-style="pop" onclick="toggleChip(this)">Pop</div>
+        <div class="chip" data-style="eletronica" onclick="toggleChip(this)">Eletrônica</div>
+        <div class="chip" data-style="hiphop" onclick="toggleChip(this)">Hip Hop/Rap</div>
+        <div class="chip" data-style="forro" onclick="toggleChip(this)">Forró</div>
+        <div class="chip" data-style="gospel" onclick="toggleChip(this)">Gospel</div>
+        <div class="chip" data-style="indie" onclick="toggleChip(this)">Indie</div>
+      </div>
+      <div class="form-error" id="signupStylesError" data-i18n="signup.styleError">Escolha pelo menos um estilo</div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeSignup()" data-i18n="signup.cancel">Cancelar</button>
+        <button class="btn-primary" onclick="submitSignup()" data-i18n="signup.submit">Criar conta 🎶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN PANEL ===== -->
+  <div class="modal-overlay" id="adminPanel">
+    <div class="modal admin-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+        <h3 style="font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🎛️ Painel Admin</h3>
+        <button onclick="closeAdmin()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div class="tab-bar">
+        <button class="active" data-tab="tab-users" onclick="switchAdminTab('tab-users')">👥 Usuários</button>
+        <button data-tab="tab-queues" onclick="switchAdminTab('tab-queues')">🎵 Filas</button>
+        <button data-tab="tab-stats" onclick="switchAdminTab('tab-stats')">📊 Estatísticas</button>
+        <button data-tab="tab-settings" onclick="switchAdminTab('tab-settings')">⚙️ Configurações</button>
+      </div>
+      <div id="tab-users" class="admin-tab active">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-weight:700;font-size:13px;">👥 Usuários</span>
+          <span style="font-size:11px;color:var(--text-muted);" id="adminUserCount">0</span>
+        </div>
+        <div id="adminUserList" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
+          <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;" data-i18n="admin.loadingUsers">Carregando...</div>
+        </div>
+      </div>
+      <div id="tab-queues" class="admin-tab">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-weight:700;font-size:13px;">🎵 Gerenciar Filas</span>
+          <button onclick="loadAdminQueues()" style="background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-secondary);padding:2px 8px;font-size:11px;cursor:pointer;font-family:inherit;" data-i18n="admin.refresh">🔄 Atualizar</button>
+        </div>
+        <div id="adminQueueList" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+          <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;" data-i18n="admin.loadingQueues">Carregando salas...</div>
+        </div>
+      </div>
+      <div id="tab-stats" class="admin-tab">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:24px;font-weight:800;color:var(--text);" id="adminUsers">0</div>
+            <div style="font-size:11px;color:var(--text-muted);">Usuários</div>
+          </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:24px;font-weight:800;color:var(--text);" id="adminRooms">0</div>
+            <div style="font-size:11px;color:var(--text-muted);">Salas</div>
+          </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:24px;font-weight:800;color:var(--text);" id="adminOnline">0</div>
+            <div style="font-size:11px;color:var(--text-muted);">Online</div>
+          </div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px;">🏆 Músicas mais votadas (últimos 7 dias)</div>
+          <div id="adminTopSongs" style="font-size:13px;color:var(--text-secondary);">Carregando...</div>
+        </div>
+      </div>
+      <div id="tab-settings" class="admin-tab">
+        <div class="admin-action-grid">
+          <button onclick="adminClearChats()" data-i18n="admin.clearChats">🗑️ Limpar Chats</button>
+          <button onclick="adminClearRooms()" data-i18n="admin.clearRooms">🧹 Limpar Salas</button>
+          <button onclick="adminExport()" data-i18n="admin.export">📥 Exportar</button>
+          <button onclick="adminBroadcast()" data-i18n="admin.broadcast">📢 Mensagem</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FAVORITOS ===== -->
+  <div class="modal-overlay" id="favoritesModal">
+    <div class="modal">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid var(--border);">
+        <h3 style="font-size:20px;font-weight:800;" data-i18n="favorites.title">⭐ Minhas Favoritas</h3>
+        <button onclick="closeFavorites()" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div id="favoritesList"><div style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px;" data-i18n="favorites.loading">Carregando favoritos...</div></div>
+    </div>
+  </div>
+
+  <!-- ===== AVATAR ===== -->
+  <div class="modal-overlay" id="avatarModal">
+    <div class="modal">
+      <h3 data-i18n="avatar.title">🎨 Escolha seu avatar</h3>
+      <div class="avatar-grid" id="avatarGrid">
+        <div class="avatar-option" data-avatar="🎸">🎸</div>
+        <div class="avatar-option" data-avatar="🎤">🎤</div>
+        <div class="avatar-option" data-avatar="🎧">🎧</div>
+        <div class="avatar-option" data-avatar="🎹">🎹</div>
+        <div class="avatar-option" data-avatar="🎺">🎺</div>
+        <div class="avatar-option" data-avatar="🎷">🎷</div>
+        <div class="avatar-option" data-avatar="🥁">🥁</div>
+        <div class="avatar-option" data-avatar="🎵">🎵</div>
+        <div class="avatar-option" data-avatar="🎶">🎶</div>
+        <div class="avatar-option" data-avatar="🎙️">🎙️</div>
+        <div class="avatar-option" data-avatar="👨‍🎤">👨‍🎤</div>
+        <div class="avatar-option" data-avatar="👩‍🎤">👩‍🎤</div>
+        <div class="avatar-option" data-avatar="🧑‍🎤">🧑‍🎤</div>
+        <div class="avatar-option" data-avatar="🤘">🤘</div>
+        <div class="avatar-option" data-avatar="🕺">🕺</div>
+        <div class="avatar-option" data-avatar="💃">💃</div>
+        <div class="avatar-option" data-avatar="🌈">🌈</div>
+        <div class="avatar-option" data-avatar="⭐">⭐</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeAvatarModal()" data-i18n="avatar.cancel">Cancelar</button>
+        <button class="btn-primary" onclick="saveAvatar()" data-i18n="avatar.save">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOBBY ===== -->
+  <div class="screen" id="screen-lobby">
+    <div class="app">
+      <div class="header">
+        <div class="header-left"><h1>🎸 Sonora <span>Fan</span></h1></div>
+        <div class="header-right">
+          <div class="user-info" id="userInfo">
+            <span id="userAvatar" style="cursor:pointer;" onclick="openAvatarModal()">🎸</span>
+            <span id="userDisplayName">Usuário</span>
+            <span id="userPointsBadge" style="font-size:11px;color:var(--accent);margin-left:4px;"></span>
+          </div>
+          <button class="admin-toggle-btn" onclick="toggleAdmin()" title="Admin" id="adminBtn" style="display:none;">🎛️</button>
+          <button class="theme-toggle-btn" onclick="toggleTheme()" title="Trocar Tema" id="themeBtn">🌙</button>
+          <div class="lang-selector">
+            <button class="lang-btn active" data-lang="pt" onclick="setLanguage('pt')">PT</button>
+            <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" data-lang="es" onclick="setLanguage('es')">ES</button>
+          </div>
+          <button class="logout-btn" onclick="doLogout()" data-i18n="logout">Sair</button>
+        </div>
+      </div>
+      <div class="lobby">
+        <div class="lobby-top">
+          <h2 data-i18n="lobby.title">Salas disponíveis</h2>
+          <div class="lobby-actions">
+            <button onclick="showCreateRoom()" data-i18n="lobby.newRoom">+ Nova sala</button>
+            <button onclick="joinRandomRoom()" data-i18n="lobby.random">🎲 Sala aleatória</button>
+          </div>
+        </div>
+        <div class="room-grid" id="roomGrid">
+          <div class="empty-state"><div class="icon">🎵</div><p data-i18n="lobby.loading">Carregando salas...</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ROOM ===== -->
+  <div class="screen" id="screen-room">
+    <div class="app">
+      <div class="header">
+        <div class="header-left">
+          <button onclick="leaveRoom()" style="background:transparent;border:1px solid var(--border);padding:6px 14px;border-radius:8px;color:var(--text);cursor:pointer;font-family:inherit;font-size:13px;" data-i18n="room.back">← Voltar</button>
+          <h1 id="roomTitle">Sala</h1>
+        </div>
+        <div class="header-right">
+          <button class="action-btn" onclick="copyInviteLink()" title="Convidar amigos">🔗</button>
+          <button class="admin-toggle-btn" onclick="toggleAdmin()" title="Admin" id="adminBtnRoom" style="display:none;">🎛️</button>
+          <button class="theme-toggle-btn" onclick="toggleTheme()" title="Trocar Tema" id="themeBtnRoom">🌙</button>
+          <button class="action-btn" onclick="toggleFavorites()" title="Favoritos" style="border-color:var(--accent2);">⭐</button>
+          <span id="adminBadge" class="admin-badge hidden">Admin</span>
+        </div>
+      </div>
+
+      <div class="room-layout" id="roomLayout">
+        <div class="queue-column">
+          <div class="queue-header">
+            <span>🎵 Fila</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="count" id="queueCount">0 músicas</span>
+              <button onclick="copyQueueIds()" style="background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);padding:2px 6px;font-size:10px;cursor:pointer;">📋</button>
+            </div>
+          </div>
+          <div class="queue-list" id="queueList">
+            <div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0;" data-i18n="queue.empty">Nenhuma música na fila</div>
+          </div>
+          <div id="waitingQueueLabel" class="waiting-queue-label hidden">⏳ Fila de espera:</div>
+          <div class="queue-list" id="waitingQueueList" style="max-height:120px;overflow-y:auto;padding:4px 12px 12px;border-top:1px solid var(--border);"></div>
+        </div>
+
+        <div class="player-column">
+          <div class="player-section">
+            <div class="player-header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);">
+              <span class="now-playing-label" style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-weight:700;" data-i18n="player.now">Tocando agora</span>
+              <span class="live-indicator" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--danger);font-weight:700;text-transform:uppercase;letter-spacing:1px;">
+                <span class="live-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--danger);animation:pulse 1.5s infinite;"></span><span data-i18n="player.live">Ao vivo</span>
+              </span>
+            </div>
+            <div id="youtube-player">
+              <div class="buffering-overlay" id="bufferingOverlay"><div class="spinner"></div></div>
+            </div>
+            <div class="player-info">
+              <div class="cover" id="trackCover">🎵</div>
+              <div class="track-info">
+                <div class="track-title" id="trackTitle" data-i18n="player.noTrack">Nenhuma música</div>
+                <div class="track-artist" id="trackArtist" data-i18n="player.addTrack">Adicione uma música</div>
+                <div class="track-dj" id="trackDj"></div>
+                <div class="track-actions">
+                  <button onclick="favoriteCurrent()" id="favCurrentBtn" data-i18n="player.fav">⭐ Favoritar</button>
+                  <button onclick="voteSkip()" id="skipBtn" title="Votar para pular" data-i18n="player.skip">⏭️ Pular</button>
+                  <button onclick="adminRemoveCurrentSong()" id="adminRemoveBtn" style="display:none;" title="Remover música atual (Admin)">🗑️ Remover</button>
+                </div>
+              </div>
+            </div>
+            <div class="progress-section">
+              <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+              <div class="progress-time"><span id="currentTime">0:00</span><span id="totalTime">0:00</span></div>
+              <div class="volume-control">
+                <span style="font-size:13px;">🔊</span>
+                <input type="range" id="volumeSlider" min="0" max="100" value="80" oninput="setVolume(this.value)">
+                <span id="volumeValue" style="font-size:11px;color:var(--text-muted);min-width:28px;text-align:right;">80%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="next-track" id="nextTrack" style="display:none;">
+            <span class="label" data-i18n="next.label">A seguir</span>
+            <div class="thumb" id="nextThumb"></div>
+            <div class="info"><div class="title" id="nextTitle">-</div><div class="artist" id="nextArtist">-</div></div>
+          </div>
+
+          <div class="add-song-area">
+            <div class="add-song">
+              <input type="text" id="songUrl" placeholder="Buscar no YouTube ou colar link..." data-i18n-placeholder="add.placeholder" oninput="handleSearchInput(this.value)" onkeydown="if(event.key==='Enter') addSong()">
+              <button id="addBtn" onclick="addSong()" data-i18n="add.btn">Adicionar</button>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+            <div class="song-preview hidden" id="songPreview">
+              <div class="song-preview-thumb" id="previewThumb">🎵</div>
+              <div class="song-preview-info">
+                <div class="song-preview-title" id="previewTitle">Prévia</div>
+                <div class="song-preview-artist" id="previewArtist">Cole um link</div>
+                <div class="song-preview-status" id="previewStatus"></div>
+              </div>
+              <div class="song-preview-actions" id="previewActions">
+                <button class="song-preview-confirm" onclick="confirmAdd()">✓</button>
+                <button class="song-preview-fav" onclick="favPreview()">⭐</button>
+                <button class="song-preview-cancel" onclick="clearPreview()">✕</button>
+              </div>
+            </div>
+            <div class="cooldown-text hidden" id="cooldownText"></div>
+          </div>
+        </div>
+
+        <div class="chat-column">
+          <div class="users-panel">
+            <div class="user-count"><span class="icon">👥</span> <span id="userCount">0</span> <span data-i18n="chat.listeners">ouvintes</span></div>
+          </div>
+          <div class="chat-panel">
+            <div class="chat-messages" id="chatMessages">
+              <div class="chat-messages-inner" id="chatMessagesInner"></div>
+            </div>
+            <div class="chat-input-bar">
+              <button class="emoji-btn" onclick="toggleEmojis()">😀</button>
+              <input type="text" id="chatInput" placeholder="Mensagem..." data-i18n-placeholder="chat.input" onkeydown="if(event.key==='Enter') sendMessage()">
+              <button onclick="sendMessage()" data-i18n="chat.send">Enviar</button>
+              <div class="emoji-panel" id="emojiPanel">
+                <span class="emoji-item" onclick="insertEmoji('😀')">😀</span>
+                <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
+                <span class="emoji-item" onclick="insertEmoji('🥰')">🥰</span>
+                <span class="emoji-item" onclick="insertEmoji('😎')">😎</span>
+                <span class="emoji-item" onclick="insertEmoji('🤩')">🤩</span>
+                <span class="emoji-item" onclick="insertEmoji('😭')">😭</span>
+                <span class="emoji-item" onclick="insertEmoji('🥳')">🥳</span>
+                <span class="emoji-item" onclick="insertEmoji('👍')">👍</span>
+                <span class="emoji-item" onclick="insertEmoji('❤️')">❤️</span>
+                <span class="emoji-item" onclick="insertEmoji('🔥')">🔥</span>
+                <span class="emoji-item" onclick="insertEmoji('🎵')">🎵</span>
+                <span class="emoji-item" onclick="insertEmoji('🎸')">🎸</span>
+                <span class="emoji-item" onclick="insertEmoji('🎤')">🎤</span>
+                <span class="emoji-item" onclick="insertEmoji('🎧')">🎧</span>
+                <span class="emoji-item" onclick="insertEmoji('✨')">✨</span>
+                <span class="emoji-item" onclick="insertEmoji('🌟')">🌟</span>
+                <span class="emoji-item" onclick="insertEmoji('💯')">💯</span>
+                <span class="emoji-item" onclick="insertEmoji('🙌')">🙌</span>
+                <span class="emoji-item" onclick="insertEmoji('👏')">👏</span>
+                <span class="emoji-item" onclick="insertEmoji('🤘')">🤘</span>
+                <span class="emoji-item" onclick="insertEmoji('🕺')">🕺</span>
+                <span class="emoji-item" onclick="insertEmoji('💃')">💃</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CREATE ROOM ===== -->
+  <div class="modal-overlay" id="createRoomModal">
+    <div class="modal">
+      <h3 data-i18n="createRoom.title">Criar sala</h3>
+      <input type="text" id="newRoomName" placeholder="Nome da sala" maxlength="40" data-i18n-placeholder="createRoom.placeholder">
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeCreateRoom()" data-i18n="createRoom.cancel">Cancelar</button>
+        <button class="btn-primary" onclick="createRoom()" data-i18n="createRoom.create">Criar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="footer">
+    <span>Desenvolvido por <a href="https://www.linkedin.com/in/ggiuntini/" target="_blank">Guilherme Giuntini</a></span>
+    <div class="social-icons">
+      <a href="#" onclick="sharePage('whatsapp'); return false;" title="WhatsApp"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/960px-WhatsApp.svg.png" alt="WhatsApp"></a>
+      <a href="#" onclick="sharePage('twitter'); return false;" title="Twitter"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvBQj3eYlJYOfo13gijtX4XWNDpiM0O7a7IfpxGMhiQ9CltsrZ8myP9uQ&s=10" alt="Twitter"></a>
+      <a href="#" onclick="sharePage('facebook'); return false;" title="Facebook"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Facebook_f_logo_%282021%29.svg/3840px-Facebook_f_logo_%282021%29.svg.png" alt="Facebook"></a>
+      <a href="#" onclick="sharePage('threads'); return false;" title="Threads"><img src="https://img.magnific.com/vetores-gratis/topicos-logotipo-em-fundo-preto-em-vetor_1017-45262.jpg?semt=ais_hybrid&w=740&q=80" alt="Threads"></a>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ===== JAVASCRIPT ===== -->
+  <!-- ============================================================ -->
+  <script>
+    // ============================================================
+    // JAVASCRIPT COMPLETO - SONORA FAN
+    // ============================================================
+    const MAX_SONG_DURATION = 600, DISLIKE_THRESHOLD = 10, COOLDOWN = 30000, MAX_SONGS_PER_USER = 3;
+    const socket = io({ withCredentials: true });
+    let currentUser = null, myName = '', myAvatar = '🎸', amIAdmin = false, currentRoom = null, currentRoomData = null;
+    let player = null, currentTrackId = null, lastAddTime = 0, songData = null;
+    let currentTheme = localStorage.getItem('sonoraTheme') || 'dark';
+    let messageLikesSync = {}, queueVotes = {}, myFavorites = [], crossfadeInterval = null;
+    let pendingRoomAfterLogin = null, myPoints = 0, myBadges = [];
+    let searchTimeout = null;
+    let currentLang = localStorage.getItem('sonoraLang') || 'pt';
+    let audioCtx = null;
+    let volumeLevel = 80;
+
+    // ===== TRADUÇÕES =====
+    const translations = {
+      pt: {
+        'hero.title': 'A pista é sua.<br>A trilha sonora é <span>de todo mundo</span>.',
+        'hero.sub': 'Entre em uma sala, adicione suas músicas favoritas do YouTube e converse em tempo real com a galera.',
+        'hero.cta1': '🎤 Entrar na sala',
+        'hero.cta2': '✍️ Criar conta',
+        'features.title': '🎶 Como funciona',
+        'features.sub': 'Tudo o que você precisa para criar a vibe perfeita',
+        'feature1.title': 'Fila colaborativa',
+        'feature1.desc': 'Todo mundo adiciona música do YouTube, a fila toca em sincronia para todos.',
+        'feature2.title': 'Chat ao vivo',
+        'feature2.desc': 'Comente as músicas, reaja com emojis e curta as escolhas da galera.',
+        'feature3.title': 'Votação democrática',
+        'feature3.desc': 'Curta ou dispense músicas da fila. Com 10 votos negativos, a música sai!',
+        'band.title': 'Ainda não tem conta? Crie uma agora!',
+        'band.sub': 'Cadastre-se e entre nas salas para ouvir música com amigos.',
+        'band.cta': 'Criar minha conta 🎵',
+        'login.sub': 'Entre com sua conta para acessar as salas.',
+        'login.error': 'Credenciais inválidas.',
+        'login.email': 'E-mail',
+        'login.password': 'Senha',
+        'login.btn': 'Entrar no palco',
+        'login.switch': 'Não tem conta?',
+        'login.signup': 'Cadastre-se',
+        'signup.title': '🎵 Criar conta',
+        'signup.name': 'Nome',
+        'signup.namePlaceholder': 'Seu nome',
+        'signup.nameError': 'Digite seu nome',
+        'signup.email': 'E-mail',
+        'signup.emailPlaceholder': 'voce@email.com',
+        'signup.emailError': 'Digite um e-mail válido',
+        'signup.password': 'Senha',
+        'signup.passwordPlaceholder': 'Crie uma senha',
+        'signup.passwordError': 'Mínimo 6 caracteres',
+        'signup.style': 'Estilo musical',
+        'signup.styleError': 'Escolha pelo menos um estilo',
+        'signup.cancel': 'Cancelar',
+        'signup.submit': 'Criar conta 🎶',
+        'admin.users': 'Usuários',
+        'admin.rooms': 'Salas',
+        'admin.online': 'Online',
+        'admin.clearChats': '🗑️ Limpar Chats',
+        'admin.clearRooms': '🧹 Limpar Salas',
+        'admin.export': '📥 Exportar',
+        'admin.broadcast': '📢 Mensagem',
+        'admin.manageQueues': '🎵 Gerenciar Filas',
+        'admin.refresh': '🔄 Atualizar',
+        'admin.loadingQueues': 'Carregando salas...',
+        'admin.usersTitle': '👥 Usuários',
+        'admin.loadingUsers': 'Carregando...',
+        'favorites.title': '⭐ Minhas Favoritas',
+        'favorites.loading': 'Carregando favoritos...',
+        'avatar.title': '🎨 Escolha seu avatar',
+        'avatar.cancel': 'Cancelar',
+        'avatar.save': 'Salvar',
+        'logout': 'Sair',
+        'lobby.title': 'Salas disponíveis',
+        'lobby.newRoom': '+ Nova sala',
+        'lobby.random': '🎲 Sala aleatória',
+        'lobby.loading': 'Carregando salas...',
+        'room.back': '← Voltar',
+        'queue.empty': 'Nenhuma música na fila',
+        'player.now': 'Tocando agora',
+        'player.live': 'Ao vivo',
+        'player.noTrack': 'Nenhuma música',
+        'player.addTrack': 'Adicione uma música',
+        'player.fav': '⭐ Favoritar',
+        'player.skip': '⏭️ Pular',
+        'next.label': 'A seguir',
+        'add.placeholder': 'Buscar no YouTube ou colar link...',
+        'add.btn': 'Adicionar',
+        'chat.listeners': 'ouvintes',
+        'chat.input': 'Mensagem...',
+        'chat.send': 'Enviar',
+        'createRoom.title': 'Criar sala',
+        'createRoom.placeholder': 'Nome da sala',
+        'createRoom.cancel': 'Cancelar',
+        'createRoom.create': 'Criar'
+      },
+      en: {
+        'hero.title': 'The dance floor is yours.<br>The soundtrack is <span>everyone\'s</span>.',
+        'hero.sub': 'Join a room, add your favorite YouTube songs and chat live with the crew.',
+        'hero.cta1': '🎤 Enter the room',
+        'hero.cta2': '✍️ Create account',
+        'features.title': '🎶 How it works',
+        'features.sub': 'Everything you need to create the perfect vibe',
+        'feature1.title': 'Collaborative queue',
+        'feature1.desc': 'Everyone adds YouTube music, the queue plays in sync for everyone.',
+        'feature2.title': 'Live chat',
+        'feature2.desc': 'Comment on the songs, react with emojis and like the crew\'s choices.',
+        'feature3.title': 'Democratic voting',
+        'feature3.desc': 'Like or dislike songs in the queue. With 10 dislikes, the song is removed!',
+        'band.title': 'Don\'t have an account yet? Create one now!',
+        'band.sub': 'Sign up and join rooms to listen to music with friends.',
+        'band.cta': 'Create my account 🎵',
+        'login.sub': 'Log in to access the rooms.',
+        'login.error': 'Invalid credentials.',
+        'login.email': 'Email',
+        'login.password': 'Password',
+        'login.btn': 'Enter the stage',
+        'login.switch': 'Don\'t have an account?',
+        'login.signup': 'Sign up',
+        'signup.title': '🎵 Create account',
+        'signup.name': 'Name',
+        'signup.namePlaceholder': 'Your name',
+        'signup.nameError': 'Enter your name',
+        'signup.email': 'Email',
+        'signup.emailPlaceholder': 'you@email.com',
+        'signup.emailError': 'Enter a valid email',
+        'signup.password': 'Password',
+        'signup.passwordPlaceholder': 'Create a password',
+        'signup.passwordError': 'Minimum 6 characters',
+        'signup.style': 'Music style',
+        'signup.styleError': 'Choose at least one style',
+        'signup.cancel': 'Cancel',
+        'signup.submit': 'Create account 🎶',
+        'admin.users': 'Users',
+        'admin.rooms': 'Rooms',
+        'admin.online': 'Online',
+        'admin.clearChats': '🗑️ Clear Chats',
+        'admin.clearRooms': '🧹 Clear Rooms',
+        'admin.export': '📥 Export',
+        'admin.broadcast': '📢 Message',
+        'admin.manageQueues': '🎵 Manage Queues',
+        'admin.refresh': '🔄 Refresh',
+        'admin.loadingQueues': 'Loading rooms...',
+        'admin.usersTitle': '👥 Users',
+        'admin.loadingUsers': 'Loading...',
+        'favorites.title': '⭐ My Favorites',
+        'favorites.loading': 'Loading favorites...',
+        'avatar.title': '🎨 Choose your avatar',
+        'avatar.cancel': 'Cancel',
+        'avatar.save': 'Save',
+        'logout': 'Logout',
+        'lobby.title': 'Available rooms',
+        'lobby.newRoom': '+ New room',
+        'lobby.random': '🎲 Random room',
+        'lobby.loading': 'Loading rooms...',
+        'room.back': '← Back',
+        'queue.empty': 'No songs in the queue',
+        'player.now': 'Now playing',
+        'player.live': 'Live',
+        'player.noTrack': 'No song',
+        'player.addTrack': 'Add a song',
+        'player.fav': '⭐ Favorite',
+        'player.skip': '⏭️ Skip',
+        'next.label': 'Up next',
+        'add.placeholder': 'Search YouTube or paste link...',
+        'add.btn': 'Add',
+        'chat.listeners': 'listeners',
+        'chat.input': 'Message...',
+        'chat.send': 'Send',
+        'createRoom.title': 'Create room',
+        'createRoom.placeholder': 'Room name',
+        'createRoom.cancel': 'Cancel',
+        'createRoom.create': 'Create'
+      },
+      es: {
+        'hero.title': 'La pista es tuya.<br>La banda sonora es <span>de todos</span>.',
+        'hero.sub': 'Entra en una sala, añade tus canciones favoritas de YouTube y chatea en vivo con la banda.',
+        'hero.cta1': '🎤 Entrar a la sala',
+        'hero.cta2': '✍️ Crear cuenta',
+        'features.title': '🎶 Cómo funciona',
+        'features.sub': 'Todo lo que necesitas para crear el ambiente perfecto',
+        'feature1.title': 'Cola colaborativa',
+        'feature1.desc': 'Todos añaden música de YouTube, la cola se reproduce en sincronía para todos.',
+        'feature2.title': 'Chat en vivo',
+        'feature2.desc': 'Comenta las canciones, reacciona con emojis y da like a las elecciones de la banda.',
+        'feature3.title': 'Votación democrática',
+        'feature3.desc': 'Da like o dislike a las canciones de la cola. ¡Con 10 dislikes, la canción se elimina!',
+        'band.title': '¿Aún no tienes cuenta? ¡Crea una ahora!',
+        'band.sub': 'Regístrate y únete a las salas para escuchar música con amigos.',
+        'band.cta': 'Crear mi cuenta 🎵',
+        'login.sub': 'Inicia sesión para acceder a las salas.',
+        'login.error': 'Credenciales inválidas.',
+        'login.email': 'Correo',
+        'login.password': 'Contraseña',
+        'login.btn': 'Entrar al escenario',
+        'login.switch': '¿No tienes cuenta?',
+        'login.signup': 'Regístrate',
+        'signup.title': '🎵 Crear cuenta',
+        'signup.name': 'Nombre',
+        'signup.namePlaceholder': 'Tu nombre',
+        'signup.nameError': 'Ingresa tu nombre',
+        'signup.email': 'Correo',
+        'signup.emailPlaceholder': 'tu@email.com',
+        'signup.emailError': 'Ingresa un correo válido',
+        'signup.password': 'Contraseña',
+        'signup.passwordPlaceholder': 'Crea una contraseña',
+        'signup.passwordError': 'Mínimo 6 caracteres',
+        'signup.style': 'Estilo musical',
+        'signup.styleError': 'Elige al menos un estilo',
+        'signup.cancel': 'Cancelar',
+        'signup.submit': 'Crear cuenta 🎶',
+        'admin.users': 'Usuarios',
+        'admin.rooms': 'Salas',
+        'admin.online': 'En línea',
+        'admin.clearChats': '🗑️ Limpiar Chats',
+        'admin.clearRooms': '🧹 Limpiar Salas',
+        'admin.export': '📥 Exportar',
+        'admin.broadcast': '📢 Mensaje',
+        'admin.manageQueues': '🎵 Gestionar Colas',
+        'admin.refresh': '🔄 Actualizar',
+        'admin.loadingQueues': 'Cargando salas...',
+        'admin.usersTitle': '👥 Usuarios',
+        'admin.loadingUsers': 'Cargando...',
+        'favorites.title': '⭐ Mis Favoritas',
+        'favorites.loading': 'Cargando favoritas...',
+        'avatar.title': '🎨 Elige tu avatar',
+        'avatar.cancel': 'Cancelar',
+        'avatar.save': 'Guardar',
+        'logout': 'Salir',
+        'lobby.title': 'Salas disponibles',
+        'lobby.newRoom': '+ Nueva sala',
+        'lobby.random': '🎲 Sala aleatoria',
+        'lobby.loading': 'Cargando salas...',
+        'room.back': '← Volver',
+        'queue.empty': 'No hay canciones en la cola',
+        'player.now': 'Reproduciendo ahora',
+        'player.live': 'En vivo',
+        'player.noTrack': 'Sin canción',
+        'player.addTrack': 'Añade una canción',
+        'player.fav': '⭐ Favorito',
+        'player.skip': '⏭️ Saltar',
+        'next.label': 'Siguiente',
+        'add.placeholder': 'Buscar en YouTube o pegar enlace...',
+        'add.btn': 'Añadir',
+        'chat.listeners': 'oyentes',
+        'chat.input': 'Mensaje...',
+        'chat.send': 'Enviar',
+        'createRoom.title': 'Crear sala',
+        'createRoom.placeholder': 'Nombre de la sala',
+        'createRoom.cancel': 'Cancelar',
+        'createRoom.create': 'Crear'
+      }
+    };
+
+    function t(key) { return translations[currentLang]?.[key] || key; }
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('sonoraLang', lang);
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+      document.querySelectorAll('[data-i18n]').forEach(el => { const text = t(el.dataset.i18n); if (text) el.innerHTML = text; });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { const text = t(el.dataset.i18nPlaceholder); if (text) el.placeholder = text; });
+    }
+
+    function playSound(type) {
+      if (type === 'add') return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        gain.gain.value = 0.15;
+        if (type === 'like') {
+          osc.frequency.value = 800;
+          osc.type = 'sine';
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.2);
+          return;
+        }
+        osc.frequency.value = 600;
+        osc.type = 'sine';
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch(e) {}
+    }
+
+    function $(id) { return document.getElementById(id); }
+    function toast(msg, type) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.className = 'toast' + (type === 'error' ? ' error' : type === 'success' ? ' success' : '');
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 3000);
+    }
+    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+    function formatTime(d) { const date = new Date(d); return date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0'); }
+    function formatDuration(s) { if (!s || s <= 0) return '0:00'; const m = Math.floor(s/60); const sec = Math.floor(s%60); return m + ':' + sec.toString().padStart(2,'0'); }
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); const el = document.getElementById('screen-'+id); if(el) el.classList.add('active'); }
+
+    const badWords = ['porra','caralho','merda','puta','foda','cu','buceta','pica','bosta','viado','bicha','corno','fdp','pqp','arrombado','desgraçado','vagabundo','escroto','idiota','imbecil','retardado','fuck','shit','bitch','asshole','dick','cock','pussy','cunt','whore','slut','bastard','damn','hell','nigger','fag'];
+    function censorText(t) { let c = t; badWords.forEach(w => { const r = new RegExp('\\b' + w + '\\b','gi'); c = c.replace(r,'***'); }); return c; }
+
+    // ===== TEMAS (DARK PADRÃO) =====
+    function applyTheme() {
+      const themes = {
+        'dark': { btn:'🌙', bg:'#050508', card:'#0f0f18', hover:'#161620', border:'#1e1e2e', text:'#f0f0f8', textSec:'#9a9ab0', textMuted:'#555570', accent:'#ff6b35', accent2:'#7c3aed', bgImage:'none', overlay:'transparent' },
+        'ocean': { btn:'🌊', bg:'#e8f0fe', card:'#ffffff', hover:'#d2e3fc', border:'#b6c8e6', text:'#0b1e3a', textSec:'#2a4b7c', textMuted:'#6a8bb0', accent:'#1a73e8', accent2:'#0d47a1', bgImage:'none', overlay:'transparent' },
+        'sunset': { btn:'🌅', bg:'#1a0e12', card:'#2d1b20', hover:'#40262e', border:'#5a3845', text:'#fde8e0', textSec:'#eab8a8', textMuted:'#a07268', accent:'#ff7b54', accent2:'#ffb26b', bgImage:'none', overlay:'transparent' },
+        'forest': { btn:'🌿', bg:'#0f130a', card:'#1c2415', hover:'#2a3420', border:'#3d4a30', text:'#edf3e0', textSec:'#b3c99a', textMuted:'#6b7f56', accent:'#8bc34a', accent2:'#558b2f', bgImage:'none', overlay:'transparent' },
+        'high-contrast': { btn:'🟡', bg:'#000000', card:'#1a1a1a', hover:'#333333', border:'#666666', text:'#ffffff', textSec:'#f0f0f0', textMuted:'#aaaaaa', accent:'#ffd700', accent2:'#ffaa00', bgImage:'none', overlay:'transparent' },
+        'cherry': { btn:'🌸', bg:'#fcf4f7', card:'#ffffff', hover:'#fce4ec', border:'#f8bbd0', text:'#4a1a2c', textSec:'#7a4b5c', textMuted:'#b08b9a', accent:'#e91e63', accent2:'#ad1457', bgImage:'none', overlay:'transparent' },
+        'retro': { btn:'📺', bg:'#0f0b06', card:'#1c150d', hover:'#2a1f14', border:'#3d2e1e', text:'#e8c98a', textSec:'#c4a064', textMuted:'#7a633a', accent:'#ffa500', accent2:'#cc8400', bgImage:'none', overlay:'rgba(0,0,0,0.4)' }
+      };
+      const t = themes[currentTheme] || themes['dark'];
+      Object.entries(t).forEach(([k, v]) => {
+        if (k === 'btn') return;
+        document.documentElement.style.setProperty('--' + k, v);
+      });
+      document.querySelectorAll('#themeBtn, #themeBtnRoom').forEach(b => { if(b) b.textContent = t.btn; });
+      localStorage.setItem('sonoraTheme', currentTheme);
+    }
+
+    function toggleTheme() {
+      const keys = ['dark', 'ocean', 'sunset', 'forest', 'high-contrast', 'cherry', 'retro'];
+      const idx = keys.indexOf(currentTheme);
+      currentTheme = keys[(idx + 1) % keys.length];
+      applyTheme();
+      toast('Tema: ' + currentTheme, 'success');
+    }
+
+    // ===== LOGIN / SIGNUP =====
+    function showLogin() { $('landingScreen').style.display = 'none'; $('loginScreen').classList.add('active'); }
+    function hideLogin() { $('loginScreen').classList.remove('active'); }
+    function openSignup() { hideLogin(); $('signupModal').classList.add('active'); }
+    function closeSignup() { $('signupModal').classList.remove('active'); $('landingScreen').style.display = 'block'; }
+    function toggleChip(el) { el.classList.toggle('selected'); }
+
+    async function submitSignup() {
+      const nome = $('signupNome').value.trim();
+      const email = $('signupEmail').value.trim();
+      const senha = $('signupPassword').value.trim();
+      const estilos = Array.from(document.querySelectorAll('#signupStyles .chip.selected')).map(c => c.dataset.style);
+      if (nome.length < 2) return toast('Digite seu nome', 'error');
+      if (!email.includes('@')) return toast('E-mail inválido', 'error');
+      if (senha.length < 6) return toast('Senha deve ter 6+ caracteres', 'error');
+      if (estilos.length === 0) return toast('Escolha um estilo musical', 'error');
+
+      const btn = document.querySelector('#signupModal .btn-primary');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Criando conta...';
+
+      try {
+        try {
+          await firebase.auth().createUserWithEmailAndPassword(email, senha);
+        } catch (authError) {
+          if (authError.code === 'auth/email-already-in-use') {
+            await firebase.auth().signInWithEmailAndPassword(email, senha);
+          } else {
+            throw authError;
+          }
+        }
+
+        let loginData;
+        try {
+          const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome, email, senha, estilos }) });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+        } catch (signupError) {
+          console.log('Cadastro já existia no backend, fazendo login...');
+        }
+
+        const loginRes = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, senha }) });
+        loginData = await loginRes.json();
+        if (!loginRes.ok) throw new Error(loginData.error);
+
+        currentUser = loginData.user;
+        myName = currentUser.nome;
+        myAvatar = currentUser.avatar || '🎸';
+        myPoints = currentUser.points || 0;
+        myBadges = currentUser.badges || [];
+
+        closeSignup();
+        hideLogin();
+        $('landingScreen').style.display = 'none';
+        showScreen('lobby');
+        updateUserInfo();
+        loadRooms();
+        checkAdmin();
+        loadFavorites();
+        toast('Bem-vindo(a) ' + myName + '! 🎉', 'success');
+      } catch(e) {
+        toast(e.message || 'Erro ao criar conta', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    async function doLogin() {
+      const email = $('loginEmail').value.trim();
+      const senha = $('loginPassword').value.trim();
+      const errorEl = $('loginError');
+      if (!email || !senha) { errorEl.textContent = 'Preencha e-mail e senha'; errorEl.classList.add('show'); return; }
+      const btn = $('loginBtn');
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+      try {
+        await firebase.auth().signInWithEmailAndPassword(email, senha);
+        const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, senha }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        currentUser = data.user;
+        myName = currentUser.nome;
+        myAvatar = currentUser.avatar || '🎸';
+        myPoints = currentUser.points || 0;
+        myBadges = currentUser.badges || [];
+        hideLogin();
+        $('landingScreen').style.display = 'none';
+        showScreen('lobby');
+        updateUserInfo();
+        loadRooms();
+        checkAdmin();
+        loadFavorites();
+        toast('Bem-vindo(a) de volta ' + myName + '!', 'success');
+      } catch(e) {
+        if (e.code === 'auth/invalid-credential' || e.message.includes('invalid-credential')) {
+          errorEl.textContent = 'Sem cadastro, venha ser um Fan!';
+        } else {
+          errorEl.textContent = e.message || 'Erro ao fazer login';
+        }
+        errorEl.classList.add('show');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Entrar no palco';
+      }
+    }
+
+    function doLogout() {
+      firebase.auth().signOut().catch(() => {});
+      fetch('/api/logout', { method: 'POST' }).catch(() => {});
+      if (currentRoom) { socket.emit('leaveRoom'); currentRoom = null; }
+      currentUser = null;
+      showScreen('lobby');
+      $('screen-lobby').classList.remove('active');
+      $('landingScreen').style.display = 'block';
+      hideLogin();
+      toast('Você saiu', 'success');
+    }
+
+    function updateUserInfo() {
+      $('userDisplayName').textContent = myName;
+      $('userAvatar').textContent = myAvatar;
+      let badgeText = '';
+      if (myBadges && myBadges.length) badgeText = '🏅 ' + myBadges.join(' ');
+      else if (myPoints > 0) badgeText = '⭐ ' + myPoints;
+      $('userPointsBadge').textContent = badgeText;
+    }
+
+    function checkAdmin() {
+      const isAdmin = currentUser && (currentUser.email === 'admin@sonora.com' || amIAdmin);
+      amIAdmin = isAdmin;
+      ['adminBtn','adminBtnRoom'].forEach(id => { const el = $(id); if(el) el.style.display = isAdmin ? 'flex' : 'none'; });
+      ['adminBadge'].forEach(id => { const el = $(id); if(el) el.classList.toggle('hidden', !isAdmin); });
+      const adminRemoveBtn = $('adminRemoveBtn');
+      if (adminRemoveBtn) adminRemoveBtn.style.display = isAdmin ? 'flex' : 'none';
+    }
+
+    function switchAdminTab(tabId) {
+      document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-bar button').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`.tab-bar button[data-tab="${tabId}"]`).classList.add('active');
+    }
+
+    function toggleAdmin() {
+      if (!amIAdmin) return toast('Apenas administradores', 'error');
+      const p = $('adminPanel');
+      p.classList.toggle('active');
+      if (p.classList.contains('active')) {
+        loadAdminData();
+        loadAdminUsers();
+        loadAdminQueues();
+        loadAdminTopSongs();
+      }
+    }
+    function closeAdmin() { $('adminPanel').classList.remove('active'); }
+
+    async function loadAdminData() {
+      try {
+        const r = await fetch('/api/admin/stats', { credentials: 'include' });
+        if (!r.ok) return;
+        const d = await r.json();
+        $('adminUsers').textContent = d.totalUsers || 0;
+        $('adminRooms').textContent = d.totalRooms || 0;
+        $('adminOnline').textContent = d.onlineUsers || 0;
+      } catch(e) {}
+    }
+    async function loadAdminUsers() {
+      try {
+        const r = await fetch('/api/admin/users', { credentials: 'include' });
+        if (!r.ok) return;
+        const users = await r.json();
+        const list = $('adminUserList');
+        const count = $('adminUserCount');
+        if (!users.length) { list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">Nenhum usuário</div>'; return; }
+        count.textContent = users.length;
+        list.innerHTML = users.map(u => `
+          <div class="admin-user-item">
+            <div>
+              <span class="name">${escapeHtml(u.nome)}</span>
+              ${u.isAdmin ? '<span class="admin-badge-mini">Admin</span>' : ''}
+              <div class="email">${escapeHtml(u.email)}</div>
+            </div>
+            <div class="actions">
+              ${!u.isAdmin ? `<button class="promote" onclick="adminPromote('${u.email}')">👑</button>` : ''}
+              <button class="delete" onclick="adminDeleteUser('${u.email}')">🗑️</button>
+              <button onclick="adminKickUser('${u.email}')" style="background:#f59e0b;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">👢</button>
+              <button onclick="adminBanUser('${u.email}')" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">⛔</button>
+            </div>
+          </div>
+        `).join('');
+      } catch(e) {}
+    }
+    async function adminKickUser(email) {
+      if (!currentRoom) return toast('Precisa estar em uma sala', 'error');
+      if (!confirm(`Expulsar ${email}?`)) return;
+      try {
+        const r = await fetch('/api/admin/kick-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email, roomSlug: currentRoom }) });
+        const d = await r.json();
+        if (r.ok) { toast('✅ Usuário expulso!', 'success'); loadAdminUsers(); }
+        else toast(d.error || 'Erro', 'error');
+      } catch(e) { toast('Erro', 'error'); }
+    }
+    async function adminBanUser(email) {
+      if (!confirm(`Banir ${email}?`)) return;
+      try {
+        const r = await fetch('/api/admin/ban-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email }) });
+        if (r.ok) { toast('✅ Banido!', 'success'); loadAdminUsers(); }
+      } catch(e) {}
+    }
+    async function loadAdminQueues() {
+      try {
+        const r = await fetch('/api/rooms', { credentials: 'include' });
+        if (!r.ok) return;
+        const rooms = await r.json();
+        const c = $('adminQueueList');
+        if (!rooms.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Nenhuma sala ativa</div>'; return; }
+        let html = '';
+        for (const room of rooms) {
+          html += `<div style="margin-bottom:12px;background:var(--bg);border-radius:6px;padding:8px;border:1px solid var(--border);">`;
+          html += `<div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px;">${escapeHtml(room.name)} (${room.queueLength} músicas)</div>`;
+          if (room.queueLength === 0) { html += `<div style="color:var(--text-muted);font-size:11px;">Fila vazia</div>`; }
+          else {
+            try {
+              const dr = await fetch(`/api/room/${room.slug}/queue`, { credentials: 'include' });
+              if (!dr.ok) throw new Error();
+              const d = await dr.json();
+              if (d.queue && d.queue.length) {
+                d.queue.forEach((track, idx) => {
+                  const isCurrent = idx === d.currentIndex;
+                  html += `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;">`;
+                  html += `<span style="min-width:18px;">${isCurrent ? '▶' : idx+1}</span>`;
+                  html += `<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(track.title)}</span>`;
+                  if (!isCurrent) {
+                    html += `<button onclick="adminRemoveSong('${room.slug}', ${idx})" style="background:rgba(239,68,68,0.15);border:1px solid var(--danger);color:var(--danger);border-radius:4px;padding:0 6px;font-size:10px;cursor:pointer;">Remover</button>`;
+                  } else {
+                    html += `<span style="color:var(--accent);font-size:10px;">Tocando</span>`;
+                  }
+                  html += `</div>`;
+                });
+              } else { html += `<div style="color:var(--text-muted);font-size:11px;">Fila vazia</div>`; }
+            } catch(e) { html += `<div style="color:var(--text-muted);font-size:11px;">Erro ao carregar</div>`; }
+          }
+          html += `</div>`;
+        }
+        c.innerHTML = html;
+      } catch(e) { $('adminQueueList').innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Erro ao carregar</div>'; }
+    }
+    async function adminRemoveSong(slug, index) {
+      if (!confirm(`Remover?`)) return;
+      try {
+        const r = await fetch('/api/admin/remove-song', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ roomSlug: slug, index }) });
+        const d = await r.json();
+        if (r.ok) { toast('✅ Removida!', 'success'); loadAdminQueues(); }
+        else toast(d.error || 'Erro', 'error');
+      } catch(e) { toast('Erro', 'error'); }
+    }
+    async function adminPromote(email) {
+      if (!confirm(`Promover ${email}?`)) return;
+      try {
+        const r = await fetch('/api/admin/promote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email }) });
+        if (r.ok) { toast('✅ Promovido!', 'success'); loadAdminUsers(); }
+      } catch(e) {}
+    }
+    async function adminDeleteUser(email) {
+      if (!confirm(`Deletar ${email}?`)) return;
+      try {
+        const r = await fetch('/api/admin/delete-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ email }) });
+        if (r.ok) { toast('✅ Deletado!', 'success'); loadAdminUsers(); loadAdminData(); }
+      } catch(e) {}
+    }
+    async function adminClearChats() {
+      if (!confirm('Limpar TODOS os chats?')) return;
+      try { await fetch('/api/admin/clear-all-chats', { method: 'POST', credentials: 'include' }); toast('✅ Chats limpos!', 'success'); } catch(e) {}
+    }
+    async function adminClearRooms() {
+      if (!confirm('LIMPAR TODAS as salas?')) return;
+      try { await fetch('/api/admin/clear-all-rooms', { method: 'POST', credentials: 'include' }); toast('✅ Salas limpas!', 'success'); loadAdminData(); loadRooms(); } catch(e) {}
+    }
+    async function adminExport() {
+      try {
+        const r = await fetch('/api/admin/export-data', { credentials: 'include' });
+        const d = await r.json();
+        if (r.ok) {
+          const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `sonora-fan-${new Date().toISOString().slice(0,10)}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast('✅ Exportado!', 'success');
+        }
+      } catch(e) {}
+    }
+    function adminBroadcast() {
+      const msg = prompt('Mensagem para todos:');
+      if (!msg) return;
+      socket.emit('adminBroadcast', { message: msg });
+      toast('📢 Enviado!', 'success');
+    }
+
+    async function adminRemoveCurrentSong() {
+      if (!amIAdmin) return;
+      if (!currentRoomData || !currentRoomData.queue || !currentRoomData.queue.length) return;
+      const index = currentRoomData.currentIndex;
+      try {
+        const r = await fetch('/api/admin/remove-song', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ roomSlug: currentRoom, index })
+        });
+        const d = await r.json();
+        if (r.ok) {
+          toast('🗑️ Música removida!', 'success');
+          socket.emit('videoEnded');
+        } else {
+          toast(d.error || 'Erro ao remover', 'error');
+        }
+      } catch(e) {
+        toast('Erro ao remover', 'error');
+      }
+    }
+
+    async function loadAdminTopSongs() {
+      try {
+        const r = await fetch('/api/rooms', { credentials: 'include' });
+        if (!r.ok) return;
+        const rooms = await r.json();
+        let allSongs = [];
+        for (const room of rooms) {
+          const dr = await fetch(`/api/room/${room.slug}/stats`, { credentials: 'include' });
+          if (dr.ok) {
+            const data = await dr.json();
+            if (data.mostVoted) allSongs = allSongs.concat(data.mostVoted);
+          }
+        }
+        allSongs.sort((a,b) => b.votes - a.votes);
+        const top = allSongs.slice(0, 10);
+        const container = $('adminTopSongs');
+        if (top.length === 0) { container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhuma música votada ainda.</div>'; return; }
+        container.innerHTML = top.map((s, i) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>${i+1}. ${escapeHtml(s.title)} — ${escapeHtml(s.artist)}</span><span style="color:var(--accent);font-weight:700;">👍 ${s.votes}</span></div>`).join('');
+      } catch(e) { $('adminTopSongs').innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Erro ao carregar</div>'; }
+    }
+
+    function sharePage(platform) {
+      const url = window.location.origin;
+      const text = '🎵 Venha ouvir música no Sonora Fan!';
+      const shareUrls = {
+        whatsapp: 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text + ' ' + url),
+        twitter: 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url),
+        facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url),
+        threads: 'https://www.threads.net/intent/post?text=' + encodeURIComponent(text + ' ' + url)
+      };
+      if (shareUrls[platform]) window.open(shareUrls[platform], '_blank');
+    }
+
+    function copyInviteLink() {
+      if (!currentRoom) return toast('Entre em uma sala', 'error');
+      const url = window.location.origin + '/invite/' + currentRoom;
+      navigator.clipboard.writeText(url).then(() => {
+        toast('🔗 Link de convite copiado!', 'success');
+        fetch('/api/room/' + currentRoom + '/invite', { method: 'POST', credentials: 'include' }).catch(() => {});
+      }).catch(() => toast('Erro ao copiar', 'error'));
+    }
+
+    // ===== FAVORITOS =====
+    async function loadFavorites() {
+      try { const r = await fetch('/api/favorites', { credentials: 'include' }); if (r.ok) myFavorites = await r.json(); } catch(e) {}
+    }
+    function toggleFavorites() { const m = $('favoritesModal'); m.classList.toggle('active'); if (m.classList.contains('active')) renderFavorites(); }
+    function closeFavorites() { $('favoritesModal').classList.remove('active'); }
+    function renderFavorites() {
+      const c = $('favoritesList');
+      if (!myFavorites || !myFavorites.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px;">Nenhum favorito ainda. ⭐</div>'; return; }
+      c.innerHTML = myFavorites.map(f => `
+        <div class="favorite-item">
+          <div class="info">
+            <div class="title">${escapeHtml(f.title || 'Música')}</div>
+            <div class="artist">${escapeHtml(f.artist || 'Desconhecido')}</div>
+          </div>
+          <div class="actions">
+            <button class="add" onclick="addFavoriteToQueue('${f.id}')">➕</button>
+            <button class="remove" onclick="removeFavorite('${f.id}')">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    async function addFavoriteToQueue(id) {
+      const fav = myFavorites.find(f => f.id === id);
+      if (!fav) return toast('Favorito não encontrado', 'error');
+      if (!currentRoom) return toast('Entre em uma sala', 'error');
+      socket.emit('addSong', { id: fav.id, title: fav.title, artist: fav.artist, duration: null });
+      toast(`🎵 ${fav.title} adicionada!`, 'success');
+    }
+    async function removeFavorite(id) {
+      try { const r = await fetch(`/api/favorites/${id}`, { method: 'DELETE', credentials: 'include' }); if (r.ok) { myFavorites = myFavorites.filter(f => f.id !== id); renderFavorites(); toast('🗑️ Removido', 'success'); } } catch(e) {}
+    }
+    async function favoriteCurrent() {
+      if (!currentRoomData || !currentRoomData.queue || !currentRoomData.queue.length) return toast('Nenhuma música tocando', 'error');
+      const track = currentRoomData.queue[currentRoomData.currentIndex];
+      if (!track) return toast('Nenhuma música', 'error');
+      await addFavorite(track.id, track.title, track.artist);
+    }
+    async function favPreview() {
+      if (!songData) return toast('Nenhuma música', 'error');
+      await addFavorite(songData.id, songData.title, songData.artist);
+    }
+    async function addFavorite(id, title, artist) {
+      if (myFavorites.find(f => f.id === id)) { toast('Já está nos favoritos ⭐', 'success'); return; }
+      try {
+        const r = await fetch('/api/favorites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ videoId: id, title, artist }) });
+        if (r.ok) { myFavorites.push({ id, title, artist }); toast('⭐ Adicionado aos favoritos!', 'success'); }
+      } catch(e) {}
+    }
+
+    // ===== AVATAR =====
+    function openAvatarModal() { $('avatarModal').classList.add('active'); document.querySelectorAll('.avatar-option').forEach(el => el.classList.toggle('selected', el.dataset.avatar === myAvatar)); }
+    function closeAvatarModal() { $('avatarModal').classList.remove('active'); }
+    async function saveAvatar() {
+      const sel = document.querySelector('.avatar-option.selected');
+      if (!sel) return toast('Selecione um avatar', 'error');
+      const avatar = sel.dataset.avatar;
+      try {
+        const r = await fetch('/api/update-avatar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ avatar }) });
+        if (r.ok) { myAvatar = avatar; if (currentUser) currentUser.avatar = avatar; updateUserInfo(); toast('Avatar atualizado!', 'success'); closeAvatarModal(); }
+        else toast('Erro ao atualizar avatar', 'error');
+      } catch(e) { toast('Erro', 'error'); }
+    }
+
+    // ===== LOBBY =====
+    async function loadRooms() {
+      const grid = $('roomGrid');
+      grid.innerHTML = '<div class="empty-state"><div class="icon">🎵</div><p>Carregando salas...</p></div>';
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        const r = await fetch('/api/rooms', { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!r.ok) throw new Error('Erro ao buscar salas');
+        const roomsData = await r.json();
+        if (!roomsData.length) { grid.innerHTML = '<div class="empty-state"><div class="icon">🎵</div><p>Nenhuma sala ainda. Crie a primeira!</p></div>'; return; }
+        roomsData.sort((a,b) => b.listenerCount - a.listenerCount);
+        grid.innerHTML = '';
+        roomsData.forEach(r => {
+          const card = document.createElement('div');
+          card.className = 'room-card' + (r.isPlaying ? ' live' : '');
+          if (r.color) card.style.borderColor = r.color;
+          card.onclick = () => joinRoom(r.slug);
+          const track = r.currentTrack;
+          const thumb = track ? `<img src="https://img.youtube.com/vi/${track.id}/mqdefault.jpg" alt="">` : '<div style="padding:30px;text-align:center;font-size:40px;">🎧</div>';
+          const live = r.isPlaying ? '<div class="room-live-badge"><span class="live-dot"></span> AO VIVO</div>' : '';
+          const playingIndicator = r.isPlaying ? `<div class="playing-indicator"><span></span><span></span><span></span><span></span></div>` : '';
+          const genreTag = (currentUser && currentUser.estilos && currentUser.estilos.length > 0) ? `<span class="genre-tag">🎵 ${currentUser.estilos[0]}</span>` : '';
+          card.innerHTML = `
+            <div class="room-thumb">${thumb} ${live} <div class="room-listeners-badge"><span class="icon">🎧</span> ${r.listenerCount || 0}</div>${playingIndicator}</div>
+            <div class="room-card-body">
+              <h3>${escapeHtml(r.name)} ${r.radioMode ? '📻' : ''}</h3>
+              <div class="meta">
+                <span class="listeners"><span class="icon">👥</span> <span class="count">${r.listenerCount || 0}</span> ouvintes</span>
+                <span>🎶 ${r.queueLength || 0} na fila</span>
+                ${genreTag}
+              </div>
+              <div class="room-avatars"><span class="avatar-mini">👤</span><span class="avatar-mini">👤</span><span class="avatar-mini">👤</span></div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch(e) {
+        grid.innerHTML = '<div class="empty-state"><div class="icon">😕</div><p>Erro ao carregar salas. Verifique sua conexão.</p></div>';
+        console.error('Erro em loadRooms:', e);
+      }
+    }
+    function showCreateRoom() { $('createRoomModal').classList.add('active'); }
+    function closeCreateRoom() { $('createRoomModal').classList.remove('active'); }
+    async function createRoom() {
+      const name = $('newRoomName').value.trim();
+      if (!name) return toast('Digite um nome', 'error');
+      try {
+        const r = await fetch('/api/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, adminName: myName, color: '#7c3aed' }) });
+        const d = await r.json();
+        if (d.slug) { closeCreateRoom(); joinRoom(d.slug); }
+      } catch(e) { toast('Erro ao criar sala', 'error'); }
+    }
+    async function joinRandomRoom() {
+      try {
+        const r = await fetch('/api/rooms/random');
+        const d = await r.json();
+        if (d.slug) joinRoom(d.slug);
+        else toast('Nenhuma sala disponível', 'error');
+      } catch(e) { toast('Erro ao buscar sala', 'error'); }
+    }
+
+    function joinRoom(slug) {
+      if (!currentUser) { pendingRoomAfterLogin = slug; toast('Faça login primeiro', 'error'); showLogin(); return; }
+      currentRoom = slug;
+      socket.emit('joinRoom', { slug, name: myName, avatar: myAvatar });
+      showScreen('room');
+      document.getElementById('chatMessagesInner').innerHTML = '';
+      amIAdmin = false;
+      $('adminBadge').classList.add('hidden');
+      loadYouTubeAPI();
+    }
+    function leaveRoom() {
+      if (currentRoom) socket.emit('leaveRoom');
+      currentRoom = null;
+      currentRoomData = null;
+      if (player && player.stopVideo) player.stopVideo();
+      if (crossfadeInterval) { clearInterval(crossfadeInterval); crossfadeInterval = null; }
+      showScreen('lobby');
+      loadRooms();
+    }
+
+    // ===== PLAYER =====
+    function loadYouTubeAPI() { if (window.YT && window.YT.Player) { initPlayer(); return; } const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag); }
+    function onYouTubeIframeAPIReady() { initPlayer(); }
+    function initPlayer() {
+      if (player) return;
+      player = new YT.Player('youtube-player', {
+        height: '280', width: '100%',
+        playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, modestbranding: 1, enablejsapi: 1 },
+        events: {
+          onReady: () => {
+            const vol = parseInt($('volumeSlider').value) || 80;
+            volumeLevel = vol;
+            if (player && player.setVolume) player.setVolume(vol);
+            if (currentRoomData) syncPlayer(currentRoomData);
+          },
+          onStateChange: (e) => {
+            if (e.data === YT.PlayerState.PLAYING) {
+              const vol = parseInt($('volumeSlider').value) || 80;
+              volumeLevel = vol;
+              if (player && player.setVolume) {
+                player.setVolume(vol);
+                player.unMute();
+              }
+              try { const d = player.getDuration(); if (d > 0) socket.emit('videoDuration', { duration: Math.floor(d) }); } catch(e) {}
+              if (crossfadeInterval) { clearInterval(crossfadeInterval); crossfadeInterval = null; }
+              $('bufferingOverlay').classList.remove('show');
+            }
+            if (e.data === YT.PlayerState.BUFFERING) { $('bufferingOverlay').classList.add('show'); }
+            if (e.data === YT.PlayerState.ENDED) socket.emit('videoEnded');
+          },
+          onError: () => { toast('Erro no vídeo, pulando...', 'error'); setTimeout(() => socket.emit('videoEnded'), 2000); }
+        }
+      });
+    }
+
+    function syncPlayer(state) {
+      $('roomTitle').textContent = state.name;
+      if (!player || !player.loadVideoById) return;
+      currentRoomData = state;
+      const track = state.queue[state.currentIndex];
+      renderQueue(state.queue, state.currentIndex);
+      renderWaitingQueue(state.waitingQueue);
+      updateNextTrack(state.queue, state.currentIndex);
+      renderPinnedMessage(state.pinnedMessage);
+
+      if (!track) {
+        currentTrackId = null;
+        $('trackTitle').textContent = 'Fila vazia';
+        $('trackArtist').textContent = 'Adicione uma música';
+        $('trackDj').textContent = '';
+        $('trackCover').innerHTML = '🎵';
+        $('progressFill').style.width = '0%';
+        $('currentTime').textContent = '0:00';
+        $('totalTime').textContent = '0:00';
+        try { player.stopVideo(); } catch(e) {}
+        return;
+      }
+
+      if (currentTrackId !== track.id) {
+        currentTrackId = track.id;
+        player.loadVideoById({ videoId: track.id, startSeconds: Math.floor(state.position || 0) });
+        const vol = parseInt($('volumeSlider').value) || 80;
+        volumeLevel = vol;
+        setTimeout(() => {
+          if (player) {
+            try {
+              player.unMute();
+              player.setVolume(vol);
+              player.playVideo();
+            } catch(e) { console.warn('Erro ao ajustar áudio:', e); }
+          }
+        }, 500);
+        setTimeout(() => {
+          if (player && player.setVolume) {
+            player.setVolume(vol);
+            player.unMute();
+          }
+        }, 2000);
+        $('trackTitle').textContent = track.title || 'Música';
+        $('trackArtist').textContent = track.artist || 'Desconhecido';
+        $('trackDj').textContent = '👤 ' + (track.dj || '');
+        $('trackCover').innerHTML = `<img src="https://img.youtube.com/vi/${track.id}/mqdefault.jpg" alt="" onerror="this.parentElement.textContent='🎵'">`;
+        const items = document.querySelectorAll('.queue-item');
+        items.forEach((el, idx) => { if (idx === state.currentIndex) { el.classList.add('current'); } else el.classList.remove('current'); });
+      }
+    }
+
+    function updateNextTrack(queue, currentIndex) {
+      const next = queue[currentIndex + 1];
+      const container = $('nextTrack');
+      if (next) {
+        container.style.display = 'flex';
+        $('nextThumb').innerHTML = `<img src="https://img.youtube.com/vi/${next.id}/default.jpg" onerror="this.style.display='none'">`;
+        $('nextTitle').textContent = next.title || 'Música';
+        $('nextArtist').textContent = next.artist || 'Desconhecido';
+      } else container.style.display = 'none';
+    }
+
+    function renderPinnedMessage(msg) {
+      const container = $('chatMessagesInner');
+      if (!container) return;
+      const existing = container.querySelector('.pinned-message');
+      if (existing) existing.remove();
+      if (!msg) return;
+      const div = document.createElement('div');
+      div.className = 'pinned-message';
+      div.innerHTML = `<span class="pin-icon">📌</span><div class="content"><strong>${escapeHtml(msg.author)}:</strong> ${escapeHtml(msg.text)}</div>${amIAdmin ? `<button class="remove-pin" onclick="removePinnedMessage()">✕</button>` : ''}`;
+      container.prepend(div);
+    }
+    function removePinnedMessage() { if (!amIAdmin) return; socket.emit('removePinnedMessage'); }
+
+    function renderQueue(queue, currentIndex) {
+      const list = $('queueList');
+      const count = $('queueCount');
+      count.textContent = queue.length + ' música' + (queue.length !== 1 ? 's' : '');
+      list.innerHTML = '';
+      if (queue.length === 0) { list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0;">Nenhuma música na fila</div>'; return; }
+      const isGlobalAdmin = currentUser && currentUser.email === 'admin@sonora.com';
+      const isUserAdmin = amIAdmin || isGlobalAdmin;
+      queue.forEach((track, i) => {
+        const div = document.createElement('div');
+        div.className = 'queue-item' + (i === currentIndex ? ' current' : '');
+        if (i !== currentIndex && isUserAdmin) {
+          div.draggable = true;
+          div.dataset.index = i;
+          div.dataset.id = track.id;
+          div.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', i); div.classList.add('dragging'); });
+          div.addEventListener('dragend', () => div.classList.remove('dragging'));
+          div.addEventListener('dragover', (e) => e.preventDefault());
+          div.addEventListener('drop', (e) => { e.preventDefault(); const from = parseInt(e.dataTransfer.getData('text/plain')); if (from === i || from === currentIndex) return; const newOrder = queue.map(t => t.id); const [removed] = newOrder.splice(from, 1); newOrder.splice(i, 0, removed); socket.emit('reorderQueue', newOrder); });
+        }
+        const votes = queueVotes[i] || { up: [], down: [] };
+        const upCount = votes.up.length;
+        const downCount = votes.down.length;
+        const userVotedUp = votes.up.includes(myName);
+        const userVotedDown = votes.down.includes(myName);
+        const total = upCount + downCount;
+        const score = upCount - downCount;
+        let scoreClass = '', scoreSymbol = '⚪';
+        if (score > 0) { scoreClass = 'positive'; scoreSymbol = '👍'; }
+        if (score < 0) { scoreClass = 'negative'; scoreSymbol = '👎'; }
+        div.innerHTML = `
+          <span class="pos">${i === currentIndex ? '▶' : i + 1}</span>
+          <div class="thumb"><img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.style.display='none'"></div>
+          <div class="info">
+            <div class="title">${escapeHtml(track.title || 'Música')}</div>
+            <div class="artist">${escapeHtml(track.artist || 'Desconhecido')}</div>
+          </div>
+          <span class="dj">${escapeHtml(track.dj || '')}</span>
+          <div class="queue-votes">
+            <button class="vote-btn up ${userVotedUp ? 'voted-up' : ''}" onclick="event.stopPropagation();voteSong(${i}, 'up')"><span style="font-size:14px;">👍</span></button>
+            <span class="vote-count ${scoreClass}" title="Total: ${total} votos (${upCount} 👍, ${downCount} 👎)">${total > 0 ? scoreSymbol + score : '0'}</span>
+            <button class="vote-btn down ${userVotedDown ? 'voted-down' : ''}" onclick="event.stopPropagation();voteSong(${i}, 'down')"><span style="font-size:14px;">👎</span></button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function renderWaitingQueue(waitingQueue) {
+      const label = $('waitingQueueLabel');
+      const list = $('waitingQueueList');
+      if (!waitingQueue || waitingQueue.length === 0) { label.classList.add('hidden'); list.innerHTML = ''; return; }
+      label.classList.remove('hidden');
+      list.innerHTML = waitingQueue.map((track, i) => `<div class="queue-item waiting" style="border-left-color:var(--warning);"><span class="pos">${i + 1}</span><div class="thumb"><img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.style.display='none'"></div><div class="info"><div class="title">${escapeHtml(track.title)}</div><div class="artist">${escapeHtml(track.artist)}</div></div><span class="dj">${escapeHtml(track.dj || '')}</span></div>`).join('');
+    }
+
+    function voteSkip() { if (!currentRoom) { toast('Entre em uma sala', 'error'); return; } socket.emit('voteSkip'); }
+
+    function startCrossfade() {
+      if (crossfadeInterval) { clearInterval(crossfadeInterval); crossfadeInterval = null; }
+      crossfadeInterval = setInterval(() => {
+        try {
+          if (!player || !player.getCurrentTime) return;
+          const duration = player.getDuration();
+          if (!duration || duration <= 0) return;
+          const current = player.getCurrentTime();
+          const remaining = duration - current;
+          if (remaining <= 3 && remaining > 0) {
+            const vol = parseInt($('volumeSlider').value) || 80;
+            const steps = 20;
+            const step = vol / steps;
+            let cVol = vol;
+            const fadeOut = setInterval(() => { cVol = Math.max(0, cVol - step); if (player && player.setVolume) player.setVolume(Math.round(cVol)); if (cVol <= 0) clearInterval(fadeOut); }, 50);
+            setTimeout(() => clearInterval(fadeOut), 3000);
+          }
+        } catch(e) {}
+      }, 500);
+    }
+
+    function setVolume(val) {
+      const volume = parseInt(val);
+      if (isNaN(volume)) return;
+      volumeLevel = volume;
+      $('volumeValue').textContent = volume + '%';
+      if (player && player.setVolume) {
+        player.setVolume(volume);
+        player.unMute();
+      }
+    }
+
+    function voteSong(index, type) {
+      if (!currentRoom) { toast('Entre em uma sala para votar', 'error'); return; }
+      if (currentRoomData && currentRoomData.currentIndex === index) { toast('Não é possível votar na música atual', 'error'); return; }
+      socket.emit('voteSong', { index, type, room: currentRoom });
+    }
+
+    function handleSearchInput(value) {
+      if (searchTimeout) clearTimeout(searchTimeout);
+      const results = $('searchResults');
+      if (!value || value.length < 2) { results.classList.remove('show'); return; }
+      searchTimeout = setTimeout(async () => {
+        try {
+          const r = await fetch(`/api/search-youtube?q=${encodeURIComponent(value)}`);
+          const data = await r.json();
+          if (!r.ok) { results.innerHTML = `<div style="color:var(--danger);padding:10px;text-align:center;font-size:13px;">⚠️ ${data.error || 'Erro na busca'}</div>`; results.classList.add('show'); return; }
+          if (!data.items || data.items.length === 0) { results.innerHTML = '<div style="color:var(--text-muted);padding:10px;text-align:center;font-size:13px;">Nenhum resultado encontrado</div>'; results.classList.add('show'); return; }
+          results.innerHTML = data.items.map(item => `<div class="search-item" onclick="selectSearchResult('${item.id}','${escapeHtml(item.title)}','${escapeHtml(item.artist)}')"><img src="${item.thumb}" alt=""><div class="info"><div class="title">${escapeHtml(item.title)}</div><div class="artist">${escapeHtml(item.artist)}</div></div></div>`).join('');
+          results.classList.add('show');
+        } catch(e) {
+          results.innerHTML = '<div style="color:var(--danger);padding:10px;text-align:center;font-size:13px;">⚠️ Erro de conexão. Tente novamente.</div>';
+          results.classList.add('show');
+        }
+      }, 500);
+    }
+
+    function selectSearchResult(id, title, artist) {
+      $('searchResults').classList.remove('show');
+      $('songUrl').value = id;
+      fetch(`/api/video-info?id=${id}`).then(r => r.json()).then(data => {
+        songData = { id, title, artist, duration: data.duration || null };
+        showPreview(songData);
+      }).catch(() => { songData = { id, title, artist, duration: null }; showPreview(songData); });
+    }
+
+    function extractYouTubeId(url) {
+      if (!url) return '';
+      if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+      try {
+        const u = new URL(url);
+        if (u.hostname.includes('youtu.be')) return u.pathname.split('/').filter(Boolean)[0] || '';
+        if (u.hostname.includes('youtube.com')) {
+          const v = u.searchParams.get('v');
+          if (v) return v;
+          const parts = u.pathname.split('/').filter(Boolean);
+          const markers = ['shorts', 'embed', 'live', 'watch'];
+          const idx = parts.findIndex(p => markers.includes(p));
+          if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+        }
+      } catch(e) {}
+      const match = url.match(/[a-zA-Z0-9_-]{11}/);
+      return match ? match[0] : '';
+    }
+
+    async function previewSong() {
+      const url = $('songUrl').value.trim();
+      if (!url) { clearPreview(); return; }
+      const videoId = extractYouTubeId(url);
+      if (!videoId) { toast('Link do YouTube inválido', 'error'); clearPreview(); return; }
+      const box = $('songPreview');
+      box.classList.remove('hidden');
+      $('previewThumb').innerHTML = '⏳';
+      $('previewTitle').textContent = 'Buscando...';
+      $('previewArtist').textContent = 'Analisando link';
+      $('previewStatus').textContent = '';
+      $('previewActions').classList.add('hidden');
+      try {
+        const r = await fetch(`/api/video-info?id=${videoId}`);
+        const data = await r.json();
+        if (r.ok) { songData = { id: videoId, title: data.title, artist: data.artist || 'Desconhecido', duration: data.duration || null }; showPreview(songData); return; }
+      } catch(e) {
+        try {
+          const oembed = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+          if (oembed.ok) { const d = await oembed.json(); songData = { id: videoId, title: d.title || 'Música do YouTube', artist: d.author_name || 'Desconhecido', duration: null }; showPreview(songData); return; }
+        } catch(e2) {}
+        toast('Erro ao buscar informações', 'error');
+        clearPreview();
+      }
+    }
+
+    function showPreview(data) {
+      const box = $('songPreview');
+      box.classList.remove('hidden');
+      const thumbHtml = data.id ? `<img src="https://img.youtube.com/vi/${data.id}/mqdefault.jpg" alt="" onerror="this.parentElement.textContent='🎵'">` : '🎵';
+      const durBadge = data.duration > 0 ? `<span class="song-preview-duration">${formatDuration(data.duration)}</span>` : '';
+      $('previewThumb').innerHTML = thumbHtml + durBadge;
+      $('previewTitle').textContent = data.title || 'Música do YouTube';
+      $('previewArtist').textContent = data.artist || 'Desconhecido';
+      const confirmBtn = document.querySelector('.song-preview-confirm');
+      if (data.duration > 0) {
+        if (data.duration > MAX_SONG_DURATION) { $('previewStatus').textContent = `⛔ Muito longo! ${formatDuration(data.duration)} > ${MAX_SONG_DURATION/60} min`; $('previewStatus').style.color = 'var(--danger)'; confirmBtn.disabled = true; confirmBtn.textContent = '⛔ Muito longo'; }
+        else if (data.duration > 300) { $('previewStatus').textContent = `⚠️ ${formatDuration(data.duration)} - música longa (máx ${MAX_SONG_DURATION/60} min)`; $('previewStatus').style.color = 'var(--warning)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar'; }
+        else { $('previewStatus').textContent = `✅ ${formatDuration(data.duration)} - dentro do limite`; $('previewStatus').style.color = 'var(--success)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar'; }
+      } else { $('previewStatus').textContent = '⚠️ Duração não verificada. O vídeo será verificado ao carregar.'; $('previewStatus').style.color = 'var(--warning)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar (sem verificação)'; }
+      $('previewActions').classList.remove('hidden');
+    }
+
+    function clearPreview() { $('songPreview').classList.add('hidden'); songData = null; }
+    function confirmAdd() {
+      if (!songData || !songData.id) { toast('Nenhuma música selecionada', 'error'); return; }
+      if (songData.duration && songData.duration > MAX_SONG_DURATION) { toast(`⛔ Vídeo muito longo! Limite: ${MAX_SONG_DURATION/60} min`, 'error'); return; }
+      const now = Date.now();
+      if (now - lastAddTime < COOLDOWN) { const wait = Math.ceil((COOLDOWN - (now - lastAddTime)) / 1000); toast(`Aguarde ${wait}s`, 'error'); return; }
+      socket.emit('addSong', { id: songData.id, title: songData.title || 'Música do YouTube', artist: songData.artist || 'Desconhecido', duration: songData.duration || null });
+      lastAddTime = Date.now();
+      $('songUrl').value = '';
+      clearPreview();
+      startCooldown();
+      toast('🎵 Música adicionada!', 'success');
+    }
+
+    function addSong() {
+      const url = $('songUrl').value.trim();
+      if (!url) { toast('Cole um link do YouTube', 'error'); return; }
+      const videoId = extractYouTubeId(url);
+      if (!videoId) { toast('Link inválido', 'error'); return; }
+      if (songData && songData.id === videoId) { confirmAdd(); } else { previewSong(); }
+    }
+
+    function startCooldown() {
+      const text = $('cooldownText');
+      let remaining = COOLDOWN / 1000;
+      text.textContent = `Aguarde ${Math.floor(remaining/60)}m${remaining%60}s`;
+      text.classList.remove('hidden');
+      const interval = setInterval(() => { remaining--; if (remaining > 0) text.textContent = `Aguarde ${Math.floor(remaining/60)}m${remaining%60}s`; else { clearInterval(interval); text.classList.add('hidden'); } }, 1000);
+    }
+
+    function copyQueueIds() {
+      if (!currentRoomData || !currentRoomData.queue || !currentRoomData.queue.length) { toast('Fila vazia', 'error'); return; }
+      const ids = currentRoomData.queue.map(t => t.id).join(',');
+      navigator.clipboard.writeText(ids).then(() => toast('📋 IDs copiados!', 'success')).catch(() => toast('Erro ao copiar', 'error'));
+    }
+
+    // ===== CHAT =====
+    function renderMessage(msg) {
+      const container = document.getElementById('chatMessagesInner');
+      if (!container) return;
+      const div = document.createElement('div');
+      div.className = 'msg';
+      const msgId = msg._id || 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2,4);
+      div.dataset.msgId = msgId;
+      if (msg.isMusic) {
+        div.classList.add('msg-music');
+        div.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;width:100%;"><span style="font-size:14px;">🎵</span><span style="font-weight:700;color:var(--accent);font-size:12px;">${escapeHtml(msg.user)}</span><span style="color:var(--text-muted);font-size:11px;">adicionou</span><span class="msg-time" style="opacity:1;margin-left:auto;font-size:10px;color:var(--text-muted);">${formatTime(msg.createdAt)}</span></div><div class="music-info" style="color:var(--text);font-weight:600;font-size:13px;">${escapeHtml(msg.musicTitle || 'Música')} — ${escapeHtml(msg.musicArtist || 'Desconhecido')}</div>`;
+      } else if (msg.isSystem) {
+        div.classList.add('msg-system');
+        div.innerHTML = `<span class="msg-text" style="color:var(--text-muted);font-style:italic;font-size:12px;">${escapeHtml(msg.text)}</span>`;
+      } else {
+        const avatar = msg.avatar || '👤';
+        const color = msg.color || '#888';
+        let text = escapeHtml(msg.text);
+        text = text.replace(/@(\w+)/g, '<span style="color:var(--accent);font-weight:700;">@$1</span>');
+        const likeData = messageLikesSync[msgId] || { likes: 0, users: [] };
+        const liked = likeData.users.includes(myName);
+        const count = likeData.likes || 0;
+        div.innerHTML = `<div style="display:flex;align-items:flex-start;gap:6px;width:100%;"><div class="msg-avatar" style="background:${color}22;color:${color};border-color:${color}40;">${avatar}</div><div class="msg-content"><div class="msg-header"><span class="msg-user" style="color:${color};">${escapeHtml(msg.user)}${msg.isAdmin ? ' 👑' : ''}</span><span class="msg-time">${formatTime(msg.createdAt)}</span></div><span class="msg-text">${text}</span><div class="msg-actions"><button class="msg-like-btn ${liked ? 'liked' : ''}" onclick="likeMessage('${msgId}', this)">${liked ? '❤️' : '🤍'} <span class="msg-like-count">${count}</span></button></div></div></div>`;
+      }
+      container.appendChild(div);
+      limitChatMessages(container);
+      scrollChatToBottom();
+    }
+
+    function limitChatMessages(container) {
+      const messages = container.querySelectorAll('.msg');
+      const total = messages.length;
+      if (total > 10) {
+        const toRemove = total - 10;
+        for (let i = 0; i < toRemove; i++) {
+          const msg = messages[i];
+          if (msg) { msg.classList.add('removing'); setTimeout(() => { if (msg.parentNode) msg.remove(); }, 400); }
+        }
+      }
+    }
+
+    function scrollChatToBottom() { const container = document.getElementById('chatMessagesInner'); if (container) container.scrollTop = container.scrollHeight; }
+    function likeMessage(msgId, btn) { if (!currentRoom) { toast('Entre em uma sala para curtir', 'error'); return; } socket.emit('likeMessage', { messageId: msgId, room: currentRoom }); }
+    function updateLikeDisplay(msgId) {
+      const likeData = messageLikesSync[msgId];
+      if (!likeData) return;
+      const count = likeData.likes || 0;
+      const liked = likeData.users.includes(myName);
+      const container = document.getElementById('chatMessagesInner');
+      if (!container) return;
+      const msgElements = container.querySelectorAll('.msg');
+      let target = null;
+      for (const el of msgElements) { if (el.dataset.msgId === msgId) { target = el; break; } }
+      if (!target) return;
+      const btn = target.querySelector('.msg-like-btn');
+      if (!btn) return;
+      btn.innerHTML = `${liked ? '❤️' : '🤍'} <span class="msg-like-count">${count}</span>`;
+      if (liked) btn.classList.add('liked');
+      else btn.classList.remove('liked');
+    }
+    function sendMessage() { const input = $('chatInput'); const text = input.value.trim(); if (!text) return; socket.emit('chat', { text: censorText(text) }); input.value = ''; }
+    function toggleEmojis() { $('emojiPanel').classList.toggle('show'); }
+    function insertEmoji(e) { $('chatInput').value += e; $('chatInput').focus(); $('emojiPanel').classList.remove('show'); }
+
+    document.addEventListener('keydown', (e) => {
+      const roomActive = document.getElementById('screen-room').classList.contains('active');
+      if (!roomActive) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowUp') { e.preventDefault(); const v = Math.min(100, parseInt($('volumeSlider').value) + 5); $('volumeSlider').value = v; setVolume(v); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); const v = Math.max(0, parseInt($('volumeSlider').value) - 5); $('volumeSlider').value = v; setVolume(v); }
+    });
+
+    // ===== SOCKET EVENTS =====
+    socket.on('adminUsersUpdated', () => { if (amIAdmin) loadAdminUsers(); });
+    socket.on('userPoints', (data) => { if (data) { myPoints = data.points || 0; myBadges = data.badges || []; updateUserInfo(); } });
+    socket.on('roomState', (state) => {
+      const prev = currentRoomData?.queue?.[currentRoomData.currentIndex]?.id;
+      const next = state.queue?.[state.currentIndex]?.id;
+      if (next !== prev) { currentTrackId = null; if (next) setTimeout(startCrossfade, 1000); }
+      currentRoomData = state;
+      syncPlayer(state);
+    });
+    socket.on('queueEmpty', () => {
+      currentTrackId = null;
+      $('trackTitle').textContent = 'Fila vazia';
+      $('trackArtist').textContent = 'Adicione uma música';
+      $('trackDj').textContent = '';
+      $('trackCover').innerHTML = '🎵';
+      $('progressFill').style.width = '0%';
+      $('currentTime').textContent = '0:00';
+      $('totalTime').textContent = '0:00';
+      $('nextTrack').style.display = 'none';
+      try { player.stopVideo(); } catch(e) {}
+      renderQueue([], 0);
+      toast('Fila encerrada! Adicione músicas.', 'success');
+    });
+    socket.on('users', (users) => { $('userCount').textContent = users.length; });
+    socket.on('chat', renderMessage);
+    socket.on('chatHistory', (messages) => { const container = document.getElementById('chatMessagesInner'); if (!container) return; container.innerHTML = ''; const start = Math.max(0, messages.length - 10); messages.slice(start).forEach(m => renderMessage(m)); scrollChatToBottom(); });
+    socket.on('likeUpdate', (data) => { const { messageId, likes, users } = data; messageLikesSync[messageId] = { likes, users }; updateLikeDisplay(messageId); });
+    socket.on('likesState', (likesData) => { messageLikesSync = likesData || {}; const container = document.getElementById('chatMessagesInner'); if (!container) return; const msgElements = container.querySelectorAll('.msg'); for (const el of msgElements) { const msgId = el.dataset.msgId; if (msgId && messageLikesSync[msgId]) updateLikeDisplay(msgId); } });
+    socket.on('voteUpdate', (data) => { const { index, up, down } = data; queueVotes[index] = { up, down }; if (down.length >= DISLIKE_THRESHOLD) { toast(`👎 Música removida por votação! (${down.length} votos negativos)`, 'error'); if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex); } else { if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex); } });
+    socket.on('votesState', (votesData) => { queueVotes = votesData || {}; if (currentRoomData && currentRoomData.queue) renderQueue(currentRoomData.queue, currentRoomData.currentIndex); });
+    socket.on('error', (msg) => toast(msg, 'error'));
+    socket.on('isAdmin', (isAdmin) => { amIAdmin = isAdmin || currentUser?.email === 'admin@sonora.com'; if (amIAdmin) { $('adminBadge').classList.remove('hidden'); toast('Você é admin desta sala!', 'success'); } checkAdmin(); });
+    socket.on('kicked', (msg) => { alert(msg); leaveRoom(); });
+    socket.on('banned', (msg) => { alert(msg); leaveRoom(); });
+    socket.on('chatCleared', () => { const container = document.getElementById('chatMessagesInner'); if (container) { container.innerHTML = ''; const div = document.createElement('div'); div.className = 'msg msg-system'; div.innerHTML = '<span class="msg-text">🧹 Chat limpo pelo admin</span>'; container.appendChild(div); } toast('Chat limpo!', 'success'); });
+    socket.on('adminBroadcast', (data) => { toast(`📢 ${data.message}`, 'success'); if (currentRoom) { const msg = { user: '📢 Admin', text: data.message, isSystem: true, createdAt: new Date() }; renderMessage(msg); } });
+    socket.on('roomClosed', (msg) => { alert(msg); leaveRoom(); });
+    socket.on('skipVoteUpdate', ({ votes, needed }) => { toast(`🗳️ Votos para pular: ${votes}/${needed}`, 'success'); });
+    socket.on('waitingRoom', ({ position, maxListeners, canJoin }) => { if (canJoin) { toast('🟢 Uma vaga foi liberada! Tentando entrar...', 'success'); joinRoom(currentRoom); } else { toast(`⏳ Você está na fila de espera (posição ${position}). Aguarde uma vaga.`, 'error'); } });
+    socket.on('playSound', (type) => { playSound(type); });
+
+    // ===== PROGRESS BAR =====
+    setInterval(() => {
+      if (!player || !player.getCurrentTime) return;
+      try {
+        const current = player.getCurrentTime();
+        const duration = player.getDuration();
+        if (duration > 0) {
+          $('progressFill').style.width = (current / duration * 100) + '%';
+          $('currentTime').textContent = formatDuration(current);
+          $('totalTime').textContent = formatDuration(duration);
+        }
+      } catch(e) {}
+    }, 1000);
+
+    // ===== INIT =====
+    function init() {
+      setLanguage(currentLang);
+      applyTheme();
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get('room');
+      if (room) pendingRoomAfterLogin = room;
+      fetch('/api/me')
+        .then(res => { if (res.ok) return res.json(); throw new Error('Não autenticado'); })
+        .then(data => {
+          if (data.success && data.user) {
+            currentUser = data.user;
+            myName = currentUser.nome;
+            myAvatar = currentUser.avatar || '🎸';
+            myPoints = currentUser.points || 0;
+            myBadges = currentUser.badges || [];
+            if (currentUser.theme) { currentTheme = currentUser.theme; applyTheme(); }
+            $('landingScreen').style.display = 'none';
+            hideLogin();
+            showScreen('lobby');
+            updateUserInfo();
+            loadRooms();
+            checkAdmin();
+            loadFavorites();
+            toast('Bem-vindo(a) ' + myName + '!', 'success');
+            if (pendingRoomAfterLogin) { const s = pendingRoomAfterLogin; pendingRoomAfterLogin = null; setTimeout(() => joinRoom(s), 1000); }
+          }
+        })
+        .catch(() => {
+          $('landingScreen').style.display = 'block';
+          if (pendingRoomAfterLogin) toast('Faça login para entrar na sala!', 'error');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+      setInterval(() => { if (document.getElementById('screen-lobby').classList.contains('active')) { loadRooms(); } }, 15000);
+    });
+  </script>
+</body>
+</html>
