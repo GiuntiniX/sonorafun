@@ -27,6 +27,12 @@ try {
   process.exit(1);
 }
 
+if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+  console.error('❌ FIREBASE_SERVICE_ACCOUNT_KEY não definida. O servidor não pode funcionar.');
+  process.exit(1);
+}
+console.log('🔑 Firestore configurado com a coleção "users".');
+
 const db = admin.firestore();
 
 const app = express();
@@ -357,25 +363,62 @@ app.post('/api/signup', async (req, res) => {
   } catch (e) { console.error('Erro no signup:', e.message); res.status(500).json({ error: 'Erro ao salvar dados no Firestore: ' + e.message }); }
 });
 
+// ROTA DE LOGIN CORRIGIDA (cria usuário automaticamente se não existir)
 app.post('/api/login', async (req, res) => {
-  const { email } = req.body;
+  const { email, senha } = req.body;
   if (!email) return res.status(400).json({ error: 'Preencha e-mail' });
 
   try {
-    const userDoc = await db.collection('users').doc(email).get();
-    if (!userDoc.exists) return res.status(401).json({ error: 'Usuário não encontrado' });
-
-    const userData = userDoc.data();
-    if (!users.has(email)) users.set(email, userData);
+    let userData = await getUserFromFirestore(email);
+    
+    // Se não existir, cria um registro básico automaticamente
+    if (!userData) {
+      console.log(`⚠️ Usuário ${email} autenticado mas não encontrado no Firestore. Criando...`);
+      const nome = email.split('@')[0] || 'Usuário';
+      const estilos = ['pop'];
+      const newUser = { 
+        nome, 
+        email, 
+        estilos, 
+        avatar: '🎸', 
+        criadoEm: new Date(), 
+        theme: 'dark',
+        fontSize: 16,
+        colorblind: false
+      };
+      await setUserInFirestore(email, newUser);
+      users.set(email, newUser);
+      await setPointsInFirestore(email, { points: 0, badges: [] });
+      userPoints.set(email, { points: 0, badges: [] });
+      await setFavoritesInFirestore(email, []);
+      userFavorites.set(email, []);
+      userData = newUser;
+    }
 
     const token = crypto.randomBytes(64).toString('hex');
     sessions.set(token, email);
-    res.cookie('sessionToken', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax', path: '/' });
+    res.cookie('sessionToken', token, { 
+      httpOnly: true, 
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      sameSite: 'lax', 
+      path: '/' 
+    });
 
     const points = await getPointsFromFirestore(email);
     const isAdmin = await isAdmin(email);
-    res.json({ success: true, user: { ...userData, points: points.points, badges: points.badges, isAdmin } });
-  } catch (e) { res.status(401).json({ error: 'Credenciais inválidas' }); }
+    res.json({ 
+      success: true, 
+      user: { 
+        ...userData, 
+        points: points.points, 
+        badges: points.badges, 
+        isAdmin 
+      } 
+    });
+  } catch (e) {
+    console.error('Erro no login:', e.message);
+    res.status(500).json({ error: 'Erro interno ao fazer login. Tente novamente.' });
+  }
 });
 
 app.post('/api/logout', (req, res) => {
