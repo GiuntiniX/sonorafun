@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,10 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sonora Fan — A melhor Vibe</title>
   <script src="/socket.io/socket.io.js"></script>
-  
+
   <!-- ===== CONFIGURAÇÃO FIREBASE ===== -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"
+          integrity="sha384-9P7QHxN6XvKzL6QoXKSjKvZQ7v/8/pjKpoUYl3MN1+3YrQkI5oGzTKz8J3OoClM1"
+          crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"
+          integrity="sha384-3FNu6EPkAvvyv4HhZHV0Q3e31a+xZ66cM/ikKpUuLwMPZMs4a5G4Q+DgB3U0TgPk"
+          crossorigin="anonymous"></script>
+  <!-- DOMPurify para sanitização extra -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"
+          integrity="sha512-ISj25l5lZhfLO0eR/ljDtJ1A3bE6nMxB/OPcQJ9M/OD+Zvj5jOPU3uJUVgHc4OKHAQIh8Z1akD7h9SVrPTZ5pA=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAF1I-hhlJeiaAWNj6Ze7B6KMP1-iyOBWU",
@@ -24,7 +31,7 @@
   </script>
 
   <style>
-    /* ===== ESTILOS GLOBAIS ===== */
+    /* ===== ESTILOS GLOBAIS (mesmos, sem alterações) ===== */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -49,7 +56,7 @@
     ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 10px; }
     *:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-    /* ===== PARTICLES ===== */
+    /* ===== PARTICLES (mesmo) ===== */
     .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
     .particle { position: absolute; width: 4px; height: 4px; border-radius: 50%; animation: float 8s linear infinite; opacity: 0; }
     .particle:nth-child(2n) { background: var(--accent2); animation-duration: 10s; animation-delay: 1s; left: 20%; }
@@ -63,10 +70,9 @@
     .particle:nth-child(10n) { background: var(--warning); animation-duration: 15s; animation-delay: 5s; left: 90%; }
     @keyframes float { 0%,100% { transform: translateY(0) rotate(0deg); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 50% { transform: translateY(-100vh) rotate(180deg); } }
 
-    /* ===== LANDING PAGE ===== */
+    /* ===== LANDING PAGE (mesmo) ===== */
     .landing-screen { position: relative; z-index: 90; flex: 1; overflow-y: auto; background: transparent; }
     .landing-inner { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 48px 24px 40px; }
-
     .landing-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 60px; flex-wrap: wrap; gap: 16px; }
     .landing-logo { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
     .landing-logo span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -80,7 +86,6 @@
     .landing-nav-actions .btn-primary:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 30px rgba(124,58,237,0.5); }
     @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(124,58,237,0.4); } 70% { box-shadow: 0 0 0 15px rgba(124,58,237,0); } 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); } }
-
     .landing-hero { position: relative; border-radius: var(--radius); overflow: hidden; margin-bottom: 60px; }
     .landing-hero .hero-bg { position: absolute; inset: 0; background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTY3lRWnq5v01NPP0PcZxUJwQRlJvBVy4QsGPWxZKltu-NjR5FGbVSVpYo&s=10'); background-size: cover; background-position: center; filter: brightness(0.55) saturate(1.1); transform: scale(1.02); }
     .landing-hero .hero-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); }
@@ -93,7 +98,6 @@
     .landing-hero-ctas .btn-hero-secondary:hover { background: rgba(255,255,255,0.1); border-color: var(--accent2); }
     .landing-hero-ctas .btn-hero-primary { padding: 16px 40px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); background-size: 200% 200%; animation: gradientMove 3s ease infinite, pulseGlow 2s infinite; color: #fff; font-weight: 700; font-size: 18px; cursor: pointer; transition: all 0.2s; font-family: inherit; box-shadow: 0 0 20px rgba(124,58,237,0.3); }
     .landing-hero-ctas .btn-hero-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 40px rgba(124,58,237,0.5); }
-
     .landing-features-title { text-align: center; font-size: 38px; font-weight: 800; margin-bottom: 12px; }
     .landing-features-sub { text-align: center; color: var(--text-secondary); font-size: 18px; margin-bottom: 48px; }
     .landing-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 60px; }
@@ -102,18 +106,16 @@
     .landing-feature-card .icon { font-size: 52px; display: block; margin-bottom: 16px; }
     .landing-feature-card h3 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
     .landing-feature-card p { color: var(--text-secondary); font-size: 15px; line-height: 1.7; }
-
     .landing-cta-band { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 48px 32px; text-align: center; position: relative; overflow: hidden; margin-bottom: 40px; }
     .landing-cta-band::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent)); }
     .landing-cta-band h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; }
     .landing-cta-band p { color: var(--text-secondary); font-size: 18px; margin-bottom: 28px; }
     .landing-cta-band .btn-cta { padding: 16px 48px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent), var(--accent2)); background-size: 200% 200%; animation: gradientMove 3s ease infinite, pulseGlow 2s infinite; color: #fff; font-weight: 700; font-size: 18px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
     .landing-cta-band .btn-cta:hover { transform: translateY(-3px) scale(1.02); }
-
     @media (max-width: 992px) { .landing-features { grid-template-columns: 1fr 1fr; } .landing-hero-content { padding: 60px 30px; } .landing-hero-content h1 { font-size: 40px; } }
     @media (max-width: 600px) { .landing-hero-content { padding: 40px 20px; } .landing-hero-content h1 { font-size: 30px; } .landing-features { grid-template-columns: 1fr; } .landing-nav { flex-direction: column; align-items: stretch; } .landing-nav-actions { justify-content: center; } .landing-cta-band h2 { font-size: 24px; } .landing-cta-band p { font-size: 16px; } }
 
-    /* ===== LOGIN ===== */
+    /* ===== LOGIN (mesmo) ===== */
     .login-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(8px); }
     .login-screen.active { display: flex; }
     .login-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 48px 40px; text-align: center; max-width: 420px; width: 92%; max-height: 92vh; overflow-y: auto; position: relative; }
@@ -132,7 +134,7 @@
     .login-switch { margin-top: 16px; color: var(--text-muted); font-size: 13px; }
     .login-switch a { color: var(--accent); cursor: pointer; font-weight: 600; text-decoration: none; }
 
-    /* ===== MODAIS ===== */
+    /* ===== MODAIS (mesmo) ===== */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
     .modal-overlay.active { display: flex; }
     .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 90%; max-width: 480px; max-height: 92vh; overflow-y: auto; position: relative; animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -155,10 +157,9 @@
     .modal-actions .btn-secondary:hover { background: var(--bg-hover); }
     .modal-actions .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
     .modal-actions .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,0.3); }
-
     @keyframes slideUp { from { opacity: 0; transform: translateY(30px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-    /* ===== ADMIN PANEL ===== */
+    /* ===== ADMIN PANEL (mesmo) ===== */
     .admin-panel { max-width: 700px !important; max-height: 90vh; overflow-y: auto !important; }
     .admin-panel .tab-bar { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
     .admin-panel .tab-bar button { background: transparent; border: none; padding: 8px 16px; color: var(--text-muted); font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; transition: all 0.15s; }
@@ -178,12 +179,11 @@
     .admin-action-grid button { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); cursor: pointer; font-family: inherit; font-weight: 600; font-size: 12px; transition: all 0.15s; }
     .admin-action-grid button:hover { background: var(--bg-hover); border-color: var(--accent); }
 
-    /* ===== APP ===== */
+    /* ===== APP (mesmo) ===== */
     .app { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; max-height: 100%; overflow: hidden; }
     .hidden { display: none !important; }
     .screen { display: none; flex-direction: column; flex: 1; height: 100%; max-height: 100%; overflow: hidden; }
     .screen.active { display: flex; height: 100%; max-height: 100%; }
-
     .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); flex-shrink: 0; z-index: 50; flex-wrap: wrap; gap: 8px; }
     .header-left { display: flex; align-items: center; gap: 16px; }
     .header h1 { font-size: 18px; font-weight: 700; }
@@ -197,7 +197,7 @@
     .admin-badge { background: linear-gradient(135deg, var(--accent), var(--accent2)); padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #fff; }
     .admin-badge.hidden { display: none; }
 
-    /* ===== LOBBY ===== */
+    /* ===== LOBBY (mesmo) ===== */
     .lobby { padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; flex: 1; overflow-y: auto; }
     .lobby-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
     .lobby-top h2 { font-size: 24px; font-weight: 700; }
@@ -233,13 +233,13 @@
     .room-card .room-avatars .avatar-mini:first-child { margin-left: 0; }
     .room-card .event-badge { background: var(--warning); color: #000; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; margin-left: 6px; }
 
-    /* ===== TOAST ===== */
+    /* ===== TOAST (mesmo) ===== */
     .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); background: var(--bg-card); border: 1px solid var(--border); color: var(--text); padding: 14px 28px; border-radius: var(--radius-sm); font-size: 14px; z-index: 300; opacity: 0; transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none; font-weight: 500; box-shadow: 0 10px 40px rgba(0,0,0,0.4); max-width: 90%; }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .toast.error { border-color: var(--danger); color: #fca5a5; }
     .toast.success { border-color: var(--success); color: #86efac; }
 
-    /* ===== ROOM LAYOUT ===== */
+    /* ===== ROOM LAYOUT (mesmo) ===== */
     .room-layout { display: grid; grid-template-columns: 1fr 1.2fr 1fr; grid-template-rows: 1fr; gap: 0; flex: 1; min-height: 0; height: 100%; max-height: 100%; overflow: hidden; }
     .queue-column { border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg); overflow: hidden; height: 100%; min-height: 0; }
     .queue-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: rgba(0,0,0,0.2); }
@@ -261,7 +261,7 @@
     @media (max-width: 1024px) { .room-layout { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr; } .queue-column { border-right: none; border-bottom: 1px solid var(--border); max-height: 33%; } .player-column { max-height: 34%; padding: 12px 16px; } .chat-column { border-left: none; border-top: 1px solid var(--border); max-height: 33%; } }
     @media (max-width: 768px) { .room-layout { grid-template-rows: 0.9fr 0.9fr 0.9fr; } .queue-column { max-height: 30%; } .player-column { max-height: 40%; } .chat-column { max-height: 30%; } .header { padding: 8px 12px; } .header h1 { font-size: 15px; } }
 
-    /* ===== COMPONENTES ===== */
+    /* ===== COMPONENTES (mesmo) ===== */
     .queue-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; transition: all 0.2s; cursor: default; border-left: 3px solid transparent; flex-wrap: wrap; flex-shrink: 0; }
     .queue-item:hover { background: var(--bg-hover); }
     .queue-item.current { background: var(--bg-hover); border-left-color: var(--accent); }
@@ -350,7 +350,7 @@
     .search-item .info .title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .search-item .info .artist { font-size: 11px; color: var(--text-secondary); }
 
-    /* ===== CHAT ===== */
+    /* ===== CHAT (mesmo) ===== */
     .chat-messages { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 0; min-height: 0; max-height: 100%; height: 100%; position: relative; }
     .chat-messages-inner { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; scroll-behavior: smooth; min-height: 0; max-height: 100%; }
     .chat-messages-inner::-webkit-scrollbar { width: 0px; background: transparent; }
@@ -392,7 +392,7 @@
     .emoji-item { font-size: 20px; cursor: pointer; padding: 3px 5px; border-radius: 4px; transition: background 0.15s; line-height: 1; }
     .emoji-item:hover { background: var(--bg-hover); }
 
-    /* ===== FOOTER ===== */
+    /* ===== FOOTER (mesmo) ===== */
     .footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); flex-shrink: 0; width: 100%; }
     .footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
     .footer a:hover { text-decoration: underline; }
@@ -639,24 +639,7 @@
     <div class="modal">
       <h3 data-i18n="avatar.title">🎨 Escolha seu avatar</h3>
       <div class="avatar-grid" id="avatarGrid">
-        <div class="avatar-option" data-avatar="🎸">🎸</div>
-        <div class="avatar-option" data-avatar="🎤">🎤</div>
-        <div class="avatar-option" data-avatar="🎧">🎧</div>
-        <div class="avatar-option" data-avatar="🎹">🎹</div>
-        <div class="avatar-option" data-avatar="🎺">🎺</div>
-        <div class="avatar-option" data-avatar="🎷">🎷</div>
-        <div class="avatar-option" data-avatar="🥁">🥁</div>
-        <div class="avatar-option" data-avatar="🎵">🎵</div>
-        <div class="avatar-option" data-avatar="🎶">🎶</div>
-        <div class="avatar-option" data-avatar="🎙️">🎙️</div>
-        <div class="avatar-option" data-avatar="👨‍🎤">👨‍🎤</div>
-        <div class="avatar-option" data-avatar="👩‍🎤">👩‍🎤</div>
-        <div class="avatar-option" data-avatar="🧑‍🎤">🧑‍🎤</div>
-        <div class="avatar-option" data-avatar="🤘">🤘</div>
-        <div class="avatar-option" data-avatar="🕺">🕺</div>
-        <div class="avatar-option" data-avatar="💃">💃</div>
-        <div class="avatar-option" data-avatar="🌈">🌈</div>
-        <div class="avatar-option" data-avatar="⭐">⭐</div>
+        <!-- Avatares gerados via JS para evitar repetição -->
       </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeAvatarModal()" data-i18n="avatar.cancel">Cancelar</button>
@@ -872,8 +855,27 @@
   <!-- ============================================================ -->
   <script>
     // ============================================================
-    // JAVASCRIPT COMPLETO - SONORA FAN
+    // JAVASCRIPT COMPLETO - SONORA FAN (SEGURO)
     // ============================================================
+    // Função de escape HTML (usada em todo o código)
+    function escapeHtml(text) {
+      if (!text) return '';
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+      };
+      return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // DOMPurify para sanitização extra (já carregado via CDN)
+    function sanitizeHtml(text) {
+      if (!text) return '';
+      return DOMPurify ? DOMPurify.sanitize(text) : escapeHtml(text);
+    }
+
     const MAX_SONG_DURATION = 600, DISLIKE_THRESHOLD = 10, COOLDOWN = 30000, MAX_SONGS_PER_USER = 3;
     const socket = io({ withCredentials: true });
     let currentUser = null, myName = '', myAvatar = '🎸', amIAdmin = false, currentRoom = null, currentRoomData = null;
@@ -1129,8 +1131,14 @@
       currentLang = lang;
       localStorage.setItem('sonoraLang', lang);
       document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
-      document.querySelectorAll('[data-i18n]').forEach(el => { const text = t(el.dataset.i18n); if (text) el.innerHTML = text; });
-      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { const text = t(el.dataset.i18nPlaceholder); if (text) el.placeholder = text; });
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const text = t(el.dataset.i18n);
+        if (text) el.innerHTML = text; // seguro porque é estático e contido
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const text = t(el.dataset.i18nPlaceholder);
+        if (text) el.placeholder = text;
+      });
     }
 
     function playSound(type) {
@@ -1166,7 +1174,6 @@
       el.classList.add('show');
       setTimeout(() => el.classList.remove('show'), 3000);
     }
-    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
     function formatTime(d) { const date = new Date(d); return date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0'); }
     function formatDuration(s) { if (!s || s <= 0) return '0:00'; const m = Math.floor(s/60); const sec = Math.floor(s%60); return m + ':' + sec.toString().padStart(2,'0'); }
     function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); const el = document.getElementById('screen-'+id); if(el) el.classList.add('active'); }
@@ -1174,7 +1181,7 @@
     const badWords = ['porra','caralho','merda','puta','foda','cu','buceta','pica','bosta','viado','bicha','corno','fdp','pqp','arrombado','desgraçado','vagabundo','escroto','idiota','imbecil','retardado','fuck','shit','bitch','asshole','dick','cock','pussy','cunt','whore','slut','bastard','damn','hell','nigger','fag'];
     function censorText(t) { let c = t; badWords.forEach(w => { const r = new RegExp('\\b' + w + '\\b','gi'); c = c.replace(r,'***'); }); return c; }
 
-    // ===== TEMAS (DARK PADRÃO) =====
+    // ===== TEMAS =====
     function applyTheme() {
       const themes = {
         'dark': { btn:'🌙', bg:'#050508', card:'#0f0f18', hover:'#161620', border:'#1e1e2e', text:'#f0f0f8', textSec:'#9a9ab0', textMuted:'#555570', accent:'#ff6b35', accent2:'#7c3aed', bgImage:'none', overlay:'transparent' },
@@ -1370,6 +1377,7 @@
         $('adminOnline').textContent = d.onlineUsers || 0;
       } catch(e) {}
     }
+
     async function loadAdminUsers() {
       try {
         const r = await fetch('/api/admin/users', { credentials: 'include' });
@@ -1377,25 +1385,70 @@
         const users = await r.json();
         const list = $('adminUserList');
         const count = $('adminUserCount');
-        if (!users.length) { list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">Nenhum usuário</div>'; return; }
+        // Limpa de forma segura
+        list.innerHTML = '';
+        if (!users.length) {
+          const msg = document.createElement('div');
+          msg.style.cssText = 'color:var(--text-muted);font-size:12px;text-align:center;padding:20px;';
+          msg.textContent = 'Nenhum usuário';
+          list.appendChild(msg);
+          return;
+        }
         count.textContent = users.length;
-        list.innerHTML = users.map(u => `
-          <div class="admin-user-item">
-            <div>
-              <span class="name">${escapeHtml(u.nome)}</span>
-              ${u.isAdmin ? '<span class="admin-badge-mini">Admin</span>' : ''}
-              <div class="email">${escapeHtml(u.email)}</div>
-            </div>
-            <div class="actions">
-              ${!u.isAdmin ? `<button class="promote" onclick="adminPromote('${u.email}')">👑</button>` : ''}
-              <button class="delete" onclick="adminDeleteUser('${u.email}')">🗑️</button>
-              <button onclick="adminKickUser('${u.email}')" style="background:#f59e0b;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">👢</button>
-              <button onclick="adminBanUser('${u.email}')" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;">⛔</button>
-            </div>
-          </div>
-        `).join('');
+        users.forEach(u => {
+          const div = document.createElement('div');
+          div.className = 'admin-user-item';
+
+          const left = document.createElement('div');
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'name';
+          nameSpan.textContent = u.nome;
+          left.appendChild(nameSpan);
+          if (u.isAdmin) {
+            const badge = document.createElement('span');
+            badge.className = 'admin-badge-mini';
+            badge.textContent = 'Admin';
+            left.appendChild(badge);
+          }
+          const emailDiv = document.createElement('div');
+          emailDiv.className = 'email';
+          emailDiv.textContent = u.email;
+          left.appendChild(emailDiv);
+          div.appendChild(left);
+
+          const actions = document.createElement('div');
+          actions.className = 'actions';
+          if (!u.isAdmin) {
+            const promoteBtn = document.createElement('button');
+            promoteBtn.className = 'promote';
+            promoteBtn.textContent = '👑';
+            promoteBtn.onclick = () => adminPromote(u.email);
+            actions.appendChild(promoteBtn);
+          }
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'delete';
+          deleteBtn.textContent = '🗑️';
+          deleteBtn.onclick = () => adminDeleteUser(u.email);
+          actions.appendChild(deleteBtn);
+
+          const kickBtn = document.createElement('button');
+          kickBtn.style.cssText = 'background:#f59e0b;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;';
+          kickBtn.textContent = '👢';
+          kickBtn.onclick = () => adminKickUser(u.email);
+          actions.appendChild(kickBtn);
+
+          const banBtn = document.createElement('button');
+          banBtn.style.cssText = 'background:#ef4444;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;';
+          banBtn.textContent = '⛔';
+          banBtn.onclick = () => adminBanUser(u.email);
+          actions.appendChild(banBtn);
+
+          div.appendChild(actions);
+          list.appendChild(div);
+        });
       } catch(e) {}
     }
+
     async function adminKickUser(email) {
       if (!currentRoom) return toast('Precisa estar em uma sala', 'error');
       if (!confirm(`Expulsar ${email}?`)) return;
@@ -1406,6 +1459,7 @@
         else toast(d.error || 'Erro', 'error');
       } catch(e) { toast('Erro', 'error'); }
     }
+
     async function adminBanUser(email) {
       if (!confirm(`Banir ${email}?`)) return;
       try {
@@ -1413,19 +1467,34 @@
         if (r.ok) { toast('✅ Banido!', 'success'); loadAdminUsers(); }
       } catch(e) {}
     }
+
     async function loadAdminQueues() {
       try {
         const r = await fetch('/api/rooms', { credentials: 'include' });
         if (!r.ok) return;
-        const rooms = await r.json();
+        const roomsData = await r.json();
         const c = $('adminQueueList');
-        if (!rooms.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Nenhuma sala ativa</div>'; return; }
-        let html = '';
-        for (const room of rooms) {
-          html += `<div style="margin-bottom:12px;background:var(--bg);border-radius:6px;padding:8px;border:1px solid var(--border);">`;
-          html += `<div style="font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px;">${escapeHtml(room.name)} (${room.queueLength} músicas)</div>`;
-          if (room.queueLength === 0) { html += `<div style="color:var(--text-muted);font-size:11px;">Fila vazia</div>`; }
-          else {
+        c.innerHTML = '';
+        if (!roomsData.length) {
+          const msg = document.createElement('div');
+          msg.style.cssText = 'color:var(--text-muted);font-size:12px;text-align:center;padding:10px;';
+          msg.textContent = 'Nenhuma sala ativa';
+          c.appendChild(msg);
+          return;
+        }
+        for (const room of roomsData) {
+          const container = document.createElement('div');
+          container.style.cssText = 'margin-bottom:12px;background:var(--bg);border-radius:6px;padding:8px;border:1px solid var(--border);';
+          const header = document.createElement('div');
+          header.style.cssText = 'font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px;';
+          header.textContent = room.name + ' (' + room.queueLength + ' músicas)';
+          container.appendChild(header);
+          if (room.queueLength === 0) {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'color:var(--text-muted);font-size:11px;';
+            empty.textContent = 'Fila vazia';
+            container.appendChild(empty);
+          } else {
             try {
               const dr = await fetch(`/api/room/${room.slug}/queue`, { credentials: 'include' });
               if (!dr.ok) throw new Error();
@@ -1433,24 +1502,55 @@
               if (d.queue && d.queue.length) {
                 d.queue.forEach((track, idx) => {
                   const isCurrent = idx === d.currentIndex;
-                  html += `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;">`;
-                  html += `<span style="min-width:18px;">${isCurrent ? '▶' : idx+1}</span>`;
-                  html += `<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(track.title)}</span>`;
+                  const item = document.createElement('div');
+                  item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;';
+                  const pos = document.createElement('span');
+                  pos.style.minWidth = '18px';
+                  pos.textContent = isCurrent ? '▶' : idx+1;
+                  item.appendChild(pos);
+                  const titleSpan = document.createElement('span');
+                  titleSpan.style.cssText = 'flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                  titleSpan.textContent = track.title;
+                  item.appendChild(titleSpan);
                   if (!isCurrent) {
-                    html += `<button onclick="adminRemoveSong('${room.slug}', ${idx})" style="background:rgba(239,68,68,0.15);border:1px solid var(--danger);color:var(--danger);border-radius:4px;padding:0 6px;font-size:10px;cursor:pointer;">Remover</button>`;
+                    const removeBtn = document.createElement('button');
+                    removeBtn.style.cssText = 'background:rgba(239,68,68,0.15);border:1px solid var(--danger);color:var(--danger);border-radius:4px;padding:0 6px;font-size:10px;cursor:pointer;';
+                    removeBtn.textContent = 'Remover';
+                    removeBtn.onclick = () => adminRemoveSong(room.slug, idx);
+                    item.appendChild(removeBtn);
                   } else {
-                    html += `<span style="color:var(--accent);font-size:10px;">Tocando</span>`;
+                    const now = document.createElement('span');
+                    now.style.cssText = 'color:var(--accent);font-size:10px;';
+                    now.textContent = 'Tocando';
+                    item.appendChild(now);
                   }
-                  html += `</div>`;
+                  container.appendChild(item);
                 });
-              } else { html += `<div style="color:var(--text-muted);font-size:11px;">Fila vazia</div>`; }
-            } catch(e) { html += `<div style="color:var(--text-muted);font-size:11px;">Erro ao carregar</div>`; }
+              } else {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'color:var(--text-muted);font-size:11px;';
+                empty.textContent = 'Fila vazia';
+                container.appendChild(empty);
+              }
+            } catch(e) {
+              const err = document.createElement('div');
+              err.style.cssText = 'color:var(--text-muted);font-size:11px;';
+              err.textContent = 'Erro ao carregar';
+              container.appendChild(err);
+            }
           }
-          html += `</div>`;
+          c.appendChild(container);
         }
-        c.innerHTML = html;
-      } catch(e) { $('adminQueueList').innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Erro ao carregar</div>'; }
+      } catch(e) {
+        const c = $('adminQueueList');
+        c.innerHTML = '';
+        const err = document.createElement('div');
+        err.style.cssText = 'color:var(--text-muted);font-size:12px;text-align:center;padding:10px;';
+        err.textContent = 'Erro ao carregar';
+        c.appendChild(err);
+      }
     }
+
     async function adminRemoveSong(slug, index) {
       if (!confirm(`Remover?`)) return;
       try {
@@ -1460,6 +1560,7 @@
         else toast(d.error || 'Erro', 'error');
       } catch(e) { toast('Erro', 'error'); }
     }
+
     async function adminPromote(email) {
       if (!confirm(`Promover ${email}?`)) return;
       try {
@@ -1467,6 +1568,7 @@
         if (r.ok) { toast('✅ Promovido!', 'success'); loadAdminUsers(); }
       } catch(e) {}
     }
+
     async function adminDeleteUser(email) {
       if (!confirm(`Deletar ${email}?`)) return;
       try {
@@ -1474,14 +1576,17 @@
         if (r.ok) { toast('✅ Deletado!', 'success'); loadAdminUsers(); loadAdminData(); }
       } catch(e) {}
     }
+
     async function adminClearChats() {
       if (!confirm('Limpar TODOS os chats?')) return;
       try { await fetch('/api/admin/clear-all-chats', { method: 'POST', credentials: 'include' }); toast('✅ Chats limpos!', 'success'); } catch(e) {}
     }
+
     async function adminClearRooms() {
       if (!confirm('LIMPAR TODAS as salas?')) return;
       try { await fetch('/api/admin/clear-all-rooms', { method: 'POST', credentials: 'include' }); toast('✅ Salas limpas!', 'success'); loadAdminData(); loadRooms(); } catch(e) {}
     }
+
     async function adminExport() {
       try {
         const r = await fetch('/api/admin/export-data', { credentials: 'include' });
@@ -1498,6 +1603,7 @@
         }
       } catch(e) {}
     }
+
     function adminBroadcast() {
       const msg = prompt('Mensagem para todos:');
       if (!msg) return;
@@ -1544,9 +1650,34 @@
         allSongs.sort((a,b) => b.votes - a.votes);
         const top = allSongs.slice(0, 10);
         const container = $('adminTopSongs');
-        if (top.length === 0) { container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhuma música votada ainda.</div>'; return; }
-        container.innerHTML = top.map((s, i) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>${i+1}. ${escapeHtml(s.title)} — ${escapeHtml(s.artist)}</span><span style="color:var(--accent);font-weight:700;">👍 ${s.votes}</span></div>`).join('');
-      } catch(e) { $('adminTopSongs').innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Erro ao carregar</div>'; }
+        container.innerHTML = '';
+        if (top.length === 0) {
+          const msg = document.createElement('div');
+          msg.style.cssText = 'color:var(--text-muted);font-size:13px;';
+          msg.textContent = 'Nenhuma música votada ainda.';
+          container.appendChild(msg);
+          return;
+        }
+        top.forEach((s, i) => {
+          const div = document.createElement('div');
+          div.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;';
+          const left = document.createElement('span');
+          left.textContent = (i+1) + '. ' + s.title + ' — ' + s.artist;
+          div.appendChild(left);
+          const right = document.createElement('span');
+          right.style.cssText = 'color:var(--accent);font-weight:700;';
+          right.textContent = '👍 ' + s.votes;
+          div.appendChild(right);
+          container.appendChild(div);
+        });
+      } catch(e) {
+        const container = $('adminTopSongs');
+        container.innerHTML = '';
+        const err = document.createElement('div');
+        err.style.cssText = 'color:var(--text-muted);font-size:13px;';
+        err.textContent = 'Erro ao carregar';
+        container.appendChild(err);
+      }
     }
 
     function sharePage(platform) {
@@ -1574,24 +1705,52 @@
     async function loadFavorites() {
       try { const r = await fetch('/api/favorites', { credentials: 'include' }); if (r.ok) myFavorites = await r.json(); } catch(e) {}
     }
+
     function toggleFavorites() { const m = $('favoritesModal'); m.classList.toggle('active'); if (m.classList.contains('active')) renderFavorites(); }
     function closeFavorites() { $('favoritesModal').classList.remove('active'); }
+
     function renderFavorites() {
       const c = $('favoritesList');
-      if (!myFavorites || !myFavorites.length) { c.innerHTML = '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px;">Nenhum favorito ainda. ⭐</div>'; return; }
-      c.innerHTML = myFavorites.map(f => `
-        <div class="favorite-item">
-          <div class="info">
-            <div class="title">${escapeHtml(f.title || 'Música')}</div>
-            <div class="artist">${escapeHtml(f.artist || 'Desconhecido')}</div>
-          </div>
-          <div class="actions">
-            <button class="add" onclick="addFavoriteToQueue('${f.id}')">➕</button>
-            <button class="remove" onclick="removeFavorite('${f.id}')">🗑️</button>
-          </div>
-        </div>
-      `).join('');
+      c.innerHTML = '';
+      if (!myFavorites || !myFavorites.length) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'color:var(--text-muted);font-size:14px;text-align:center;padding:20px;';
+        msg.textContent = 'Nenhum favorito ainda. ⭐';
+        c.appendChild(msg);
+        return;
+      }
+      myFavorites.forEach(f => {
+        const div = document.createElement('div');
+        div.className = 'favorite-item';
+        const info = document.createElement('div');
+        info.className = 'info';
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = f.title || 'Música';
+        info.appendChild(title);
+        const artist = document.createElement('div');
+        artist.className = 'artist';
+        artist.textContent = f.artist || 'Desconhecido';
+        info.appendChild(artist);
+        div.appendChild(info);
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add';
+        addBtn.textContent = '➕';
+        addBtn.onclick = () => addFavoriteToQueue(f.id);
+        actions.appendChild(addBtn);
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove';
+        removeBtn.textContent = '🗑️';
+        removeBtn.onclick = () => removeFavorite(f.id);
+        actions.appendChild(removeBtn);
+        div.appendChild(actions);
+        c.appendChild(div);
+      });
     }
+
     async function addFavoriteToQueue(id) {
       const fav = myFavorites.find(f => f.id === id);
       if (!fav) return toast('Favorito não encontrado', 'error');
@@ -1599,19 +1758,23 @@
       socket.emit('addSong', { id: fav.id, title: fav.title, artist: fav.artist, duration: null });
       toast(`🎵 ${fav.title} adicionada!`, 'success');
     }
+
     async function removeFavorite(id) {
       try { const r = await fetch(`/api/favorites/${id}`, { method: 'DELETE', credentials: 'include' }); if (r.ok) { myFavorites = myFavorites.filter(f => f.id !== id); renderFavorites(); toast('🗑️ Removido', 'success'); } } catch(e) {}
     }
+
     async function favoriteCurrent() {
       if (!currentRoomData || !currentRoomData.queue || !currentRoomData.queue.length) return toast('Nenhuma música tocando', 'error');
       const track = currentRoomData.queue[currentRoomData.currentIndex];
       if (!track) return toast('Nenhuma música', 'error');
       await addFavorite(track.id, track.title, track.artist);
     }
+
     async function favPreview() {
       if (!songData) return toast('Nenhuma música', 'error');
       await addFavorite(songData.id, songData.title, songData.artist);
     }
+
     async function addFavorite(id, title, artist) {
       if (myFavorites.find(f => f.id === id)) { toast('Já está nos favoritos ⭐', 'success'); return; }
       try {
@@ -1623,6 +1786,7 @@
     // ===== AVATAR =====
     function openAvatarModal() { $('avatarModal').classList.add('active'); document.querySelectorAll('.avatar-option').forEach(el => el.classList.toggle('selected', el.dataset.avatar === myAvatar)); }
     function closeAvatarModal() { $('avatarModal').classList.remove('active'); }
+
     async function saveAvatar() {
       const sel = document.querySelector('.avatar-option.selected');
       if (!sel) return toast('Selecione um avatar', 'error');
@@ -1637,7 +1801,11 @@
     // ===== LOBBY =====
     async function loadRooms() {
       const grid = $('roomGrid');
-      grid.innerHTML = '<div class="empty-state"><div class="icon">🎵</div><p>Carregando salas...</p></div>';
+      grid.innerHTML = '';
+      const loading = document.createElement('div');
+      loading.className = 'empty-state';
+      loading.innerHTML = '<div class="icon">🎵</div><p>Carregando salas...</p>';
+      grid.appendChild(loading);
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
@@ -1645,40 +1813,104 @@
         clearTimeout(timeout);
         if (!r.ok) throw new Error('Erro ao buscar salas');
         const roomsData = await r.json();
-        if (!roomsData.length) { grid.innerHTML = '<div class="empty-state"><div class="icon">🎵</div><p>Nenhuma sala ainda. Crie a primeira!</p></div>'; return; }
-        roomsData.sort((a,b) => b.listenerCount - a.listenerCount);
         grid.innerHTML = '';
+        if (!roomsData.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.innerHTML = '<div class="icon">🎵</div><p>Nenhuma sala ainda. Crie a primeira!</p>';
+          grid.appendChild(empty);
+          return;
+        }
+        roomsData.sort((a,b) => b.listenerCount - a.listenerCount);
         roomsData.forEach(r => {
           const card = document.createElement('div');
           card.className = 'room-card' + (r.isPlaying ? ' live' : '');
           if (r.color) card.style.borderColor = r.color;
           card.onclick = () => joinRoom(r.slug);
-          const track = r.currentTrack;
-          const thumb = track ? `<img src="https://img.youtube.com/vi/${track.id}/mqdefault.jpg" alt="">` : '<div style="padding:30px;text-align:center;font-size:40px;">🎧</div>';
-          const live = r.isPlaying ? '<div class="room-live-badge"><span class="live-dot"></span> AO VIVO</div>' : '';
-          const playingIndicator = r.isPlaying ? `<div class="playing-indicator"><span></span><span></span><span></span><span></span></div>` : '';
-          const genreTag = (currentUser && currentUser.estilos && currentUser.estilos.length > 0) ? `<span class="genre-tag">🎵 ${currentUser.estilos[0]}</span>` : '';
-          card.innerHTML = `
-            <div class="room-thumb">${thumb} ${live} <div class="room-listeners-badge"><span class="icon">🎧</span> ${r.listenerCount || 0}</div>${playingIndicator}</div>
-            <div class="room-card-body">
-              <h3>${escapeHtml(r.name)} ${r.radioMode ? '📻' : ''}</h3>
-              <div class="meta">
-                <span class="listeners"><span class="icon">👥</span> <span class="count">${r.listenerCount || 0}</span> ouvintes</span>
-                <span>🎶 ${r.queueLength || 0} na fila</span>
-                ${genreTag}
-              </div>
-              <div class="room-avatars"><span class="avatar-mini">👤</span><span class="avatar-mini">👤</span><span class="avatar-mini">👤</span></div>
-            </div>
-          `;
+
+          const thumb = document.createElement('div');
+          thumb.className = 'room-thumb';
+          if (r.currentTrack) {
+            const img = document.createElement('img');
+            img.src = `https://img.youtube.com/vi/${r.currentTrack.id}/mqdefault.jpg`;
+            img.alt = '';
+            thumb.appendChild(img);
+          } else {
+            const fallback = document.createElement('div');
+            fallback.style.cssText = 'padding:30px;text-align:center;font-size:40px;';
+            fallback.textContent = '🎧';
+            thumb.appendChild(fallback);
+          }
+          if (r.isPlaying) {
+            const live = document.createElement('div');
+            live.className = 'room-live-badge';
+            live.innerHTML = '<span class="live-dot"></span> AO VIVO';
+            thumb.appendChild(live);
+          }
+          if (r.isPlaying) {
+            const indicator = document.createElement('div');
+            indicator.className = 'playing-indicator';
+            for (let i=0; i<4; i++) {
+              const span = document.createElement('span');
+              indicator.appendChild(span);
+            }
+            thumb.appendChild(indicator);
+          }
+          const badge = document.createElement('div');
+          badge.className = 'room-listeners-badge';
+          badge.innerHTML = '<span class="icon">🎧</span> ' + (r.listenerCount || 0);
+          thumb.appendChild(badge);
+          card.appendChild(thumb);
+
+          const body = document.createElement('div');
+          body.className = 'room-card-body';
+          const h3 = document.createElement('h3');
+          h3.textContent = r.name;
+          if (r.radioMode) h3.textContent += ' 📻';
+          body.appendChild(h3);
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          const listeners = document.createElement('span');
+          listeners.className = 'listeners';
+          listeners.innerHTML = '<span class="icon">👥</span> <span class="count">' + (r.listenerCount || 0) + '</span> ouvintes';
+          meta.appendChild(listeners);
+          const queueInfo = document.createElement('span');
+          queueInfo.textContent = '🎶 ' + (r.queueLength || 0) + ' na fila';
+          meta.appendChild(queueInfo);
+          if (currentUser && currentUser.estilos && currentUser.estilos.length > 0) {
+            const genre = document.createElement('span');
+            genre.className = 'genre-tag';
+            genre.textContent = '🎵 ' + currentUser.estilos[0];
+            meta.appendChild(genre);
+          }
+          body.appendChild(meta);
+
+          const avatars = document.createElement('div');
+          avatars.className = 'room-avatars';
+          for (let i=0; i<3; i++) {
+            const a = document.createElement('span');
+            a.className = 'avatar-mini';
+            a.textContent = '👤';
+            avatars.appendChild(a);
+          }
+          body.appendChild(avatars);
+          card.appendChild(body);
           grid.appendChild(card);
         });
       } catch(e) {
-        grid.innerHTML = '<div class="empty-state"><div class="icon">😕</div><p>Erro ao carregar salas. Verifique sua conexão.</p></div>';
+        grid.innerHTML = '';
+        const err = document.createElement('div');
+        err.className = 'empty-state';
+        err.innerHTML = '<div class="icon">😕</div><p>Erro ao carregar salas. Verifique sua conexão.</p>';
+        grid.appendChild(err);
         console.error('Erro em loadRooms:', e);
       }
     }
+
     function showCreateRoom() { $('createRoomModal').classList.add('active'); }
     function closeCreateRoom() { $('createRoomModal').classList.remove('active'); }
+
     async function createRoom() {
       const name = $('newRoomName').value.trim();
       if (!name) return toast('Digite um nome', 'error');
@@ -1688,6 +1920,7 @@
         if (d.slug) { closeCreateRoom(); joinRoom(d.slug); }
       } catch(e) { toast('Erro ao criar sala', 'error'); }
     }
+
     async function joinRandomRoom() {
       try {
         const r = await fetch('/api/rooms/random');
@@ -1707,6 +1940,7 @@
       $('adminBadge').classList.add('hidden');
       loadYouTubeAPI();
     }
+
     function leaveRoom() {
       if (currentRoom) socket.emit('leaveRoom');
       currentRoom = null;
@@ -1720,6 +1954,7 @@
     // ===== PLAYER =====
     function loadYouTubeAPI() { if (window.YT && window.YT.Player) { initPlayer(); return; } const tag = document.createElement('script'); tag.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(tag); }
     function onYouTubeIframeAPIReady() { initPlayer(); }
+
     function initPlayer() {
       if (player) return;
       player = new YT.Player('youtube-player', {
@@ -1767,7 +2002,7 @@
         $('trackTitle').textContent = 'Fila vazia';
         $('trackArtist').textContent = 'Adicione uma música';
         $('trackDj').textContent = '';
-        $('trackCover').innerHTML = '🎵';
+        $('trackCover').textContent = '🎵';
         $('progressFill').style.width = '0%';
         $('currentTime').textContent = '0:00';
         $('totalTime').textContent = '0:00';
@@ -1798,7 +2033,12 @@
         $('trackTitle').textContent = track.title || 'Música';
         $('trackArtist').textContent = track.artist || 'Desconhecido';
         $('trackDj').textContent = '👤 ' + (track.dj || '');
-        $('trackCover').innerHTML = `<img src="https://img.youtube.com/vi/${track.id}/mqdefault.jpg" alt="" onerror="this.parentElement.textContent='🎵'">`;
+        const cover = $('trackCover');
+        cover.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = `https://img.youtube.com/vi/${track.id}/mqdefault.jpg`;
+        img.onerror = function() { cover.textContent = '🎵'; };
+        cover.appendChild(img);
         const items = document.querySelectorAll('.queue-item');
         items.forEach((el, idx) => { if (idx === state.currentIndex) { el.classList.add('current'); } else el.classList.remove('current'); });
       }
@@ -1809,7 +2049,12 @@
       const container = $('nextTrack');
       if (next) {
         container.style.display = 'flex';
-        $('nextThumb').innerHTML = `<img src="https://img.youtube.com/vi/${next.id}/default.jpg" onerror="this.style.display='none'">`;
+        const thumb = $('nextThumb');
+        thumb.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = `https://img.youtube.com/vi/${next.id}/default.jpg`;
+        img.onerror = function() { this.style.display = 'none'; };
+        thumb.appendChild(img);
         $('nextTitle').textContent = next.title || 'Música';
         $('nextArtist').textContent = next.artist || 'Desconhecido';
       } else container.style.display = 'none';
@@ -1823,9 +2068,27 @@
       if (!msg) return;
       const div = document.createElement('div');
       div.className = 'pinned-message';
-      div.innerHTML = `<span class="pin-icon">📌</span><div class="content"><strong>${escapeHtml(msg.author)}:</strong> ${escapeHtml(msg.text)}</div>${amIAdmin ? `<button class="remove-pin" onclick="removePinnedMessage()">✕</button>` : ''}`;
+      const pin = document.createElement('span');
+      pin.className = 'pin-icon';
+      pin.textContent = '📌';
+      div.appendChild(pin);
+      const content = document.createElement('div');
+      content.className = 'content';
+      const strong = document.createElement('strong');
+      strong.textContent = msg.author;
+      content.appendChild(strong);
+      content.appendChild(document.createTextNode(': ' + msg.text));
+      div.appendChild(content);
+      if (amIAdmin) {
+        const remove = document.createElement('button');
+        remove.className = 'remove-pin';
+        remove.textContent = '✕';
+        remove.onclick = () => removePinnedMessage();
+        div.appendChild(remove);
+      }
       container.prepend(div);
     }
+
     function removePinnedMessage() { if (!amIAdmin) return; socket.emit('removePinnedMessage'); }
 
     function renderQueue(queue, currentIndex) {
@@ -1833,7 +2096,13 @@
       const count = $('queueCount');
       count.textContent = queue.length + ' música' + (queue.length !== 1 ? 's' : '');
       list.innerHTML = '';
-      if (queue.length === 0) { list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0;">Nenhuma música na fila</div>'; return; }
+      if (queue.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0;';
+        empty.textContent = 'Nenhuma música na fila';
+        list.appendChild(empty);
+        return;
+      }
       const isGlobalAdmin = currentUser && currentUser.email === 'admin@sonora.com';
       const isUserAdmin = amIAdmin || isGlobalAdmin;
       queue.forEach((track, i) => {
@@ -1846,7 +2115,15 @@
           div.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', i); div.classList.add('dragging'); });
           div.addEventListener('dragend', () => div.classList.remove('dragging'));
           div.addEventListener('dragover', (e) => e.preventDefault());
-          div.addEventListener('drop', (e) => { e.preventDefault(); const from = parseInt(e.dataTransfer.getData('text/plain')); if (from === i || from === currentIndex) return; const newOrder = queue.map(t => t.id); const [removed] = newOrder.splice(from, 1); newOrder.splice(i, 0, removed); socket.emit('reorderQueue', newOrder); });
+          div.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const from = parseInt(e.dataTransfer.getData('text/plain'));
+            if (from === i || from === currentIndex) return;
+            const newOrder = queue.map(t => t.id);
+            const [removed] = newOrder.splice(from, 1);
+            newOrder.splice(i, 0, removed);
+            socket.emit('reorderQueue', newOrder);
+          });
         }
         const votes = queueVotes[i] || { up: [], down: [] };
         const upCount = votes.up.length;
@@ -1858,20 +2135,58 @@
         let scoreClass = '', scoreSymbol = '⚪';
         if (score > 0) { scoreClass = 'positive'; scoreSymbol = '👍'; }
         if (score < 0) { scoreClass = 'negative'; scoreSymbol = '👎'; }
-        div.innerHTML = `
-          <span class="pos">${i === currentIndex ? '▶' : i + 1}</span>
-          <div class="thumb"><img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.style.display='none'"></div>
-          <div class="info">
-            <div class="title">${escapeHtml(track.title || 'Música')}</div>
-            <div class="artist">${escapeHtml(track.artist || 'Desconhecido')}</div>
-          </div>
-          <span class="dj">${escapeHtml(track.dj || '')}</span>
-          <div class="queue-votes">
-            <button class="vote-btn up ${userVotedUp ? 'voted-up' : ''}" onclick="event.stopPropagation();voteSong(${i}, 'up')"><span style="font-size:14px;">👍</span></button>
-            <span class="vote-count ${scoreClass}" title="Total: ${total} votos (${upCount} 👍, ${downCount} 👎)">${total > 0 ? scoreSymbol + score : '0'}</span>
-            <button class="vote-btn down ${userVotedDown ? 'voted-down' : ''}" onclick="event.stopPropagation();voteSong(${i}, 'down')"><span style="font-size:14px;">👎</span></button>
-          </div>
-        `;
+
+        const posSpan = document.createElement('span');
+        posSpan.className = 'pos';
+        posSpan.textContent = i === currentIndex ? '▶' : i + 1;
+        div.appendChild(posSpan);
+
+        const thumbDiv = document.createElement('div');
+        thumbDiv.className = 'thumb';
+        const img = document.createElement('img');
+        img.src = `https://img.youtube.com/vi/${track.id}/default.jpg`;
+        img.onerror = function() { this.style.display = 'none'; };
+        thumbDiv.appendChild(img);
+        div.appendChild(thumbDiv);
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'info';
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'title';
+        titleDiv.textContent = track.title || 'Música';
+        infoDiv.appendChild(titleDiv);
+        const artistDiv = document.createElement('div');
+        artistDiv.className = 'artist';
+        artistDiv.textContent = track.artist || 'Desconhecido';
+        infoDiv.appendChild(artistDiv);
+        div.appendChild(infoDiv);
+
+        const djSpan = document.createElement('span');
+        djSpan.className = 'dj';
+        djSpan.textContent = track.dj || '';
+        div.appendChild(djSpan);
+
+        const votesDiv = document.createElement('div');
+        votesDiv.className = 'queue-votes';
+        const upBtn = document.createElement('button');
+        upBtn.className = 'vote-btn up' + (userVotedUp ? ' voted-up' : '');
+        upBtn.innerHTML = '<span style="font-size:14px;">👍</span>';
+        upBtn.onclick = (e) => { e.stopPropagation(); voteSong(i, 'up'); };
+        votesDiv.appendChild(upBtn);
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'vote-count ' + scoreClass;
+        countSpan.textContent = total > 0 ? scoreSymbol + score : '0';
+        countSpan.title = `Total: ${total} votos (${upCount} 👍, ${downCount} 👎)`;
+        votesDiv.appendChild(countSpan);
+
+        const downBtn = document.createElement('button');
+        downBtn.className = 'vote-btn down' + (userVotedDown ? ' voted-down' : '');
+        downBtn.innerHTML = '<span style="font-size:14px;">👎</span>';
+        downBtn.onclick = (e) => { e.stopPropagation(); voteSong(i, 'down'); };
+        votesDiv.appendChild(downBtn);
+
+        div.appendChild(votesDiv);
         list.appendChild(div);
       });
     }
@@ -1879,9 +2194,41 @@
     function renderWaitingQueue(waitingQueue) {
       const label = $('waitingQueueLabel');
       const list = $('waitingQueueList');
-      if (!waitingQueue || waitingQueue.length === 0) { label.classList.add('hidden'); list.innerHTML = ''; return; }
+      list.innerHTML = '';
+      if (!waitingQueue || waitingQueue.length === 0) { label.classList.add('hidden'); return; }
       label.classList.remove('hidden');
-      list.innerHTML = waitingQueue.map((track, i) => `<div class="queue-item waiting" style="border-left-color:var(--warning);"><span class="pos">${i + 1}</span><div class="thumb"><img src="https://img.youtube.com/vi/${track.id}/default.jpg" onerror="this.style.display='none'"></div><div class="info"><div class="title">${escapeHtml(track.title)}</div><div class="artist">${escapeHtml(track.artist)}</div></div><span class="dj">${escapeHtml(track.dj || '')}</span></div>`).join('');
+      waitingQueue.forEach((track, i) => {
+        const div = document.createElement('div');
+        div.className = 'queue-item waiting';
+        div.style.borderLeftColor = 'var(--warning)';
+        const pos = document.createElement('span');
+        pos.className = 'pos';
+        pos.textContent = i + 1;
+        div.appendChild(pos);
+        const thumb = document.createElement('div');
+        thumb.className = 'thumb';
+        const img = document.createElement('img');
+        img.src = `https://img.youtube.com/vi/${track.id}/default.jpg`;
+        img.onerror = function() { this.style.display = 'none'; };
+        thumb.appendChild(img);
+        div.appendChild(thumb);
+        const info = document.createElement('div');
+        info.className = 'info';
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = track.title;
+        info.appendChild(title);
+        const artist = document.createElement('div');
+        artist.className = 'artist';
+        artist.textContent = track.artist;
+        info.appendChild(artist);
+        div.appendChild(info);
+        const dj = document.createElement('span');
+        dj.className = 'dj';
+        dj.textContent = track.dj || '';
+        div.appendChild(dj);
+        list.appendChild(div);
+      });
     }
 
     function voteSkip() { if (!currentRoom) { toast('Entre em uma sala', 'error'); return; } socket.emit('voteSkip'); }
@@ -1927,17 +2274,57 @@
     function handleSearchInput(value) {
       if (searchTimeout) clearTimeout(searchTimeout);
       const results = $('searchResults');
+      results.innerHTML = '';
       if (!value || value.length < 2) { results.classList.remove('show'); return; }
       searchTimeout = setTimeout(async () => {
         try {
           const r = await fetch(`/api/search-youtube?q=${encodeURIComponent(value)}`);
           const data = await r.json();
-          if (!r.ok) { results.innerHTML = `<div style="color:var(--danger);padding:10px;text-align:center;font-size:13px;">⚠️ ${data.error || 'Erro na busca'}</div>`; results.classList.add('show'); return; }
-          if (!data.items || data.items.length === 0) { results.innerHTML = '<div style="color:var(--text-muted);padding:10px;text-align:center;font-size:13px;">Nenhum resultado encontrado</div>'; results.classList.add('show'); return; }
-          results.innerHTML = data.items.map(item => `<div class="search-item" onclick="selectSearchResult('${item.id}','${escapeHtml(item.title)}','${escapeHtml(item.artist)}')"><img src="${item.thumb}" alt=""><div class="info"><div class="title">${escapeHtml(item.title)}</div><div class="artist">${escapeHtml(item.artist)}</div></div></div>`).join('');
+          results.innerHTML = '';
+          if (!r.ok) {
+            const err = document.createElement('div');
+            err.style.cssText = 'color:var(--danger);padding:10px;text-align:center;font-size:13px;';
+            err.textContent = '⚠️ ' + (data.error || 'Erro na busca');
+            results.appendChild(err);
+            results.classList.add('show');
+            return;
+          }
+          if (!data.items || data.items.length === 0) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'color:var(--text-muted);padding:10px;text-align:center;font-size:13px;';
+            msg.textContent = 'Nenhum resultado encontrado';
+            results.appendChild(msg);
+            results.classList.add('show');
+            return;
+          }
+          data.items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'search-item';
+            div.onclick = () => selectSearchResult(item.id, item.title, item.artist);
+            const img = document.createElement('img');
+            img.src = item.thumb;
+            img.alt = '';
+            div.appendChild(img);
+            const info = document.createElement('div');
+            info.className = 'info';
+            const title = document.createElement('div');
+            title.className = 'title';
+            title.textContent = item.title;
+            info.appendChild(title);
+            const artist = document.createElement('div');
+            artist.className = 'artist';
+            artist.textContent = item.artist;
+            info.appendChild(artist);
+            div.appendChild(info);
+            results.appendChild(div);
+          });
           results.classList.add('show');
         } catch(e) {
-          results.innerHTML = '<div style="color:var(--danger);padding:10px;text-align:center;font-size:13px;">⚠️ Erro de conexão. Tente novamente.</div>';
+          results.innerHTML = '';
+          const err = document.createElement('div');
+          err.style.cssText = 'color:var(--danger);padding:10px;text-align:center;font-size:13px;';
+          err.textContent = '⚠️ Erro de conexão. Tente novamente.';
+          results.appendChild(err);
           results.classList.add('show');
         }
       }, 500);
@@ -1978,7 +2365,8 @@
       if (!videoId) { toast('Link do YouTube inválido', 'error'); clearPreview(); return; }
       const box = $('songPreview');
       box.classList.remove('hidden');
-      $('previewThumb').innerHTML = '⏳';
+      const thumb = $('previewThumb');
+      thumb.textContent = '⏳';
       $('previewTitle').textContent = 'Buscando...';
       $('previewArtist').textContent = 'Analisando link';
       $('previewStatus').textContent = '';
@@ -2000,21 +2388,54 @@
     function showPreview(data) {
       const box = $('songPreview');
       box.classList.remove('hidden');
-      const thumbHtml = data.id ? `<img src="https://img.youtube.com/vi/${data.id}/mqdefault.jpg" alt="" onerror="this.parentElement.textContent='🎵'">` : '🎵';
-      const durBadge = data.duration > 0 ? `<span class="song-preview-duration">${formatDuration(data.duration)}</span>` : '';
-      $('previewThumb').innerHTML = thumbHtml + durBadge;
+      const thumb = $('previewThumb');
+      thumb.innerHTML = '';
+      if (data.id) {
+        const img = document.createElement('img');
+        img.src = `https://img.youtube.com/vi/${data.id}/mqdefault.jpg`;
+        img.onerror = function() { this.parentElement.textContent = '🎵'; };
+        thumb.appendChild(img);
+        if (data.duration > 0) {
+          const dur = document.createElement('span');
+          dur.className = 'song-preview-duration';
+          dur.textContent = formatDuration(data.duration);
+          thumb.appendChild(dur);
+        }
+      } else {
+        thumb.textContent = '🎵';
+      }
       $('previewTitle').textContent = data.title || 'Música do YouTube';
       $('previewArtist').textContent = data.artist || 'Desconhecido';
       const confirmBtn = document.querySelector('.song-preview-confirm');
+      const status = $('previewStatus');
       if (data.duration > 0) {
-        if (data.duration > MAX_SONG_DURATION) { $('previewStatus').textContent = `⛔ Muito longo! ${formatDuration(data.duration)} > ${MAX_SONG_DURATION/60} min`; $('previewStatus').style.color = 'var(--danger)'; confirmBtn.disabled = true; confirmBtn.textContent = '⛔ Muito longo'; }
-        else if (data.duration > 300) { $('previewStatus').textContent = `⚠️ ${formatDuration(data.duration)} - música longa (máx ${MAX_SONG_DURATION/60} min)`; $('previewStatus').style.color = 'var(--warning)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar'; }
-        else { $('previewStatus').textContent = `✅ ${formatDuration(data.duration)} - dentro do limite`; $('previewStatus').style.color = 'var(--success)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar'; }
-      } else { $('previewStatus').textContent = '⚠️ Duração não verificada. O vídeo será verificado ao carregar.'; $('previewStatus').style.color = 'var(--warning)'; confirmBtn.disabled = false; confirmBtn.textContent = '✓ Adicionar (sem verificação)'; }
+        if (data.duration > MAX_SONG_DURATION) {
+          status.textContent = `⛔ Muito longo! ${formatDuration(data.duration)} > ${MAX_SONG_DURATION/60} min`;
+          status.style.color = 'var(--danger)';
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = '⛔ Muito longo';
+        } else if (data.duration > 300) {
+          status.textContent = `⚠️ ${formatDuration(data.duration)} - música longa (máx ${MAX_SONG_DURATION/60} min)`;
+          status.style.color = 'var(--warning)';
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = '✓ Adicionar';
+        } else {
+          status.textContent = `✅ ${formatDuration(data.duration)} - dentro do limite`;
+          status.style.color = 'var(--success)';
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = '✓ Adicionar';
+        }
+      } else {
+        status.textContent = '⚠️ Duração não verificada. O vídeo será verificado ao carregar.';
+        status.style.color = 'var(--warning)';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '✓ Adicionar (sem verificação)';
+      }
       $('previewActions').classList.remove('hidden');
     }
 
     function clearPreview() { $('songPreview').classList.add('hidden'); songData = null; }
+
     function confirmAdd() {
       if (!songData || !songData.id) { toast('Nenhuma música selecionada', 'error'); return; }
       if (songData.duration && songData.duration > MAX_SONG_DURATION) { toast(`⛔ Vídeo muito longo! Limite: ${MAX_SONG_DURATION/60} min`, 'error'); return; }
@@ -2060,10 +2481,36 @@
       div.dataset.msgId = msgId;
       if (msg.isMusic) {
         div.classList.add('msg-music');
-        div.innerHTML = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;width:100%;"><span style="font-size:14px;">🎵</span><span style="font-weight:700;color:var(--accent);font-size:12px;">${escapeHtml(msg.user)}</span><span style="color:var(--text-muted);font-size:11px;">adicionou</span><span class="msg-time" style="opacity:1;margin-left:auto;font-size:10px;color:var(--text-muted);">${formatTime(msg.createdAt)}</span></div><div class="music-info" style="color:var(--text);font-weight:600;font-size:13px;">${escapeHtml(msg.musicTitle || 'Música')} — ${escapeHtml(msg.musicArtist || 'Desconhecido')}</div>`;
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:2px;width:100%;';
+        const icon = document.createElement('span');
+        icon.style.fontSize = '14px';
+        icon.textContent = '🎵';
+        wrapper.appendChild(icon);
+        const userSpan = document.createElement('span');
+        userSpan.style.cssText = 'font-weight:700;color:var(--accent);font-size:12px;';
+        userSpan.textContent = msg.user;
+        wrapper.appendChild(userSpan);
+        const added = document.createElement('span');
+        added.style.cssText = 'color:var(--text-muted);font-size:11px;';
+        added.textContent = 'adicionou';
+        wrapper.appendChild(added);
+        const time = document.createElement('span');
+        time.className = 'msg-time';
+        time.style.cssText = 'opacity:1;margin-left:auto;font-size:10px;color:var(--text-muted);';
+        time.textContent = formatTime(msg.createdAt);
+        wrapper.appendChild(time);
+        div.appendChild(wrapper);
+        const musicInfo = document.createElement('div');
+        musicInfo.className = 'music-info';
+        musicInfo.textContent = (msg.musicTitle || 'Música') + ' — ' + (msg.musicArtist || 'Desconhecido');
+        div.appendChild(musicInfo);
       } else if (msg.isSystem) {
         div.classList.add('msg-system');
-        div.innerHTML = `<span class="msg-text" style="color:var(--text-muted);font-style:italic;font-size:12px;">${escapeHtml(msg.text)}</span>`;
+        const text = document.createElement('span');
+        text.className = 'msg-text';
+        text.textContent = msg.text;
+        div.appendChild(text);
       } else {
         const avatar = msg.avatar || '👤';
         const color = msg.color || '#888';
@@ -2072,7 +2519,46 @@
         const likeData = messageLikesSync[msgId] || { likes: 0, users: [] };
         const liked = likeData.users.includes(myName);
         const count = likeData.likes || 0;
-        div.innerHTML = `<div style="display:flex;align-items:flex-start;gap:6px;width:100%;"><div class="msg-avatar" style="background:${color}22;color:${color};border-color:${color}40;">${avatar}</div><div class="msg-content"><div class="msg-header"><span class="msg-user" style="color:${color};">${escapeHtml(msg.user)}${msg.isAdmin ? ' 👑' : ''}</span><span class="msg-time">${formatTime(msg.createdAt)}</span></div><span class="msg-text">${text}</span><div class="msg-actions"><button class="msg-like-btn ${liked ? 'liked' : ''}" onclick="likeMessage('${msgId}', this)">${liked ? '❤️' : '🤍'} <span class="msg-like-count">${count}</span></button></div></div></div>`;
+
+        const inner = document.createElement('div');
+        inner.style.cssText = 'display:flex;align-items:flex-start;gap:6px;width:100%;';
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'msg-avatar';
+        avatarDiv.style.cssText = `background:${color}22;color:${color};border-color:${color}40;`;
+        avatarDiv.textContent = avatar;
+        inner.appendChild(avatarDiv);
+
+        const content = document.createElement('div');
+        content.className = 'msg-content';
+        const header = document.createElement('div');
+        header.className = 'msg-header';
+        const userSpan = document.createElement('span');
+        userSpan.className = 'msg-user';
+        userSpan.style.color = color;
+        userSpan.textContent = msg.user;
+        if (msg.isAdmin) userSpan.textContent += ' 👑';
+        header.appendChild(userSpan);
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'msg-time';
+        timeSpan.textContent = formatTime(msg.createdAt);
+        header.appendChild(timeSpan);
+        content.appendChild(header);
+
+        const msgText = document.createElement('span');
+        msgText.className = 'msg-text';
+        msgText.innerHTML = text;
+        content.appendChild(msgText);
+
+        const actions = document.createElement('div');
+        actions.className = 'msg-actions';
+        const likeBtn = document.createElement('button');
+        likeBtn.className = 'msg-like-btn' + (liked ? ' liked' : '');
+        likeBtn.innerHTML = (liked ? '❤️' : '🤍') + ' <span class="msg-like-count">' + count + '</span>';
+        likeBtn.onclick = () => likeMessage(msgId, likeBtn);
+        actions.appendChild(likeBtn);
+        content.appendChild(actions);
+        inner.appendChild(content);
+        div.appendChild(inner);
       }
       container.appendChild(div);
       limitChatMessages(container);
@@ -2092,7 +2578,9 @@
     }
 
     function scrollChatToBottom() { const container = document.getElementById('chatMessagesInner'); if (container) container.scrollTop = container.scrollHeight; }
+
     function likeMessage(msgId, btn) { if (!currentRoom) { toast('Entre em uma sala para curtir', 'error'); return; } socket.emit('likeMessage', { messageId: msgId, room: currentRoom }); }
+
     function updateLikeDisplay(msgId) {
       const likeData = messageLikesSync[msgId];
       if (!likeData) return;
@@ -2106,10 +2594,11 @@
       if (!target) return;
       const btn = target.querySelector('.msg-like-btn');
       if (!btn) return;
-      btn.innerHTML = `${liked ? '❤️' : '🤍'} <span class="msg-like-count">${count}</span>`;
+      btn.innerHTML = (liked ? '❤️' : '🤍') + ' <span class="msg-like-count">' + count + '</span>';
       if (liked) btn.classList.add('liked');
       else btn.classList.remove('liked');
     }
+
     function sendMessage() { const input = $('chatInput'); const text = input.value.trim(); if (!text) return; socket.emit('chat', { text: censorText(text) }); input.value = ''; }
     function toggleEmojis() { $('emojiPanel').classList.toggle('show'); }
     function insertEmoji(e) { $('chatInput').value += e; $('chatInput').focus(); $('emojiPanel').classList.remove('show'); }
@@ -2137,7 +2626,7 @@
       $('trackTitle').textContent = 'Fila vazia';
       $('trackArtist').textContent = 'Adicione uma música';
       $('trackDj').textContent = '';
-      $('trackCover').innerHTML = '🎵';
+      $('trackCover').textContent = '🎵';
       $('progressFill').style.width = '0%';
       $('currentTime').textContent = '0:00';
       $('totalTime').textContent = '0:00';
@@ -2177,6 +2666,24 @@
         }
       } catch(e) {}
     }, 1000);
+
+    // ===== AVATAR GRID (geração dinâmica) =====
+    (function initAvatarGrid() {
+      const avatars = ['🎸','🎤','🎧','🎹','🎺','🎷','🥁','🎵','🎶','🎙️','👨‍🎤','👩‍🎤','🧑‍🎤','🤘','🕺','💃','🌈','⭐'];
+      const grid = document.getElementById('avatarGrid');
+      grid.innerHTML = '';
+      avatars.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'avatar-option';
+        div.dataset.avatar = a;
+        div.textContent = a;
+        div.onclick = function() {
+          document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+          this.classList.add('selected');
+        };
+        grid.appendChild(div);
+      });
+    })();
 
     // ===== INIT =====
     function init() {
