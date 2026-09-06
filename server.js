@@ -6,16 +6,19 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const admin = require('firebase-admin');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const cors = require('cors');
 
-// ===== PROTEÇÃO GLOBAL PARA O SERVIDOR NUNCA CAIR =====
+// ===== PROTEÇÃO GLOBAL =====
 process.on('uncaughtException', (err) => {
-  console.error('🚨 Erro não capturado (CRASH):', err);
+  console.error('🚨 Erro não capturado:', err.message);
 });
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('🚨 Promise rejeitada não tratada:', reason);
+process.on('unhandledRejection', (reason) => {
+  console.error('🚨 Promise rejeitada:', reason);
 });
 
-// ========== INICIALIZAÇÃO DO FIREBASE ==========
+// ===== FIREBASE =====
 try {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
   admin.initializeApp({
@@ -24,21 +27,96 @@ try {
   console.log('🔥 Firebase conectado!');
 } catch (e) {
   console.error('⚠️ Erro ao conectar Firebase:', e.message);
+  process.exit(1);
 }
-
 const db = admin.firestore();
 
+// ===== APP =====
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || '*', // Em produção, defina o domínio exato
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+// ===== SEGURANÇA =====
+// Helmet com CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'", // necessário para scripts inline (pode ser substituído por nonce em produção)
+        "https://www.gstatic.com",
+        "https://www.youtube.com",
+        "https://cdnjs.cloudflare.com",
+        "https://cdn.jsdelivr.net",
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://img.youtube.com",
+        "https://encrypted-tbn0.gstatic.com",
+        "https://upload.wikimedia.org",
+        "https://img.magnific.com",
+      ],
+      connectSrc: [
+        "'self'",
+        "https://firestore.googleapis.com",
+        "https://www.googleapis.com",
+        "https://sonorafan-777-default-rtdb.firebaseio.com",
+      ],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      frameSrc: ["'self'", "https://www.youtube.com"],
+      objectSrc: ["'none'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  frameguard: { action: 'deny' },
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
+
+// CORS
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true,
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // limite por IP
+  message: { error: 'Muitas requisições, tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/login', limiter);
+app.use('/api/signup', limiter);
+app.use('/api/me', limiter);
+
+// Middlewares
+app.use(express.json({ limit: '10kb' })); // limitar tamanho do payload
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
-// ========== CONFIG ==========
+// ===== CONFIG =====
 const colors = ['#f59e0b', '#3b82f6', '#ef4444', '#22c55e', '#a855f7', '#ec4899', '#06b6d4', '#f97316', '#8b5cf6', '#14b8a6'];
-const adminEmails = new Set(['admin@sonora.com']);
+const adminEmails = new Set((process.env.ADMIN_EMAILS || 'admin@sonora.com').split(','));
 const settings = { maxQueue: 20, cooldown: 30, maxDuration: 600, maxListeners: 20 };
 const DISLIKE_THRESHOLD = 10;
 const MAX_SONGS_PER_USER = 3;
@@ -46,7 +124,7 @@ const SKIP_VOTE_THRESHOLD = 0.5;
 const MIN_SKIP_VOTES = 3;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
 
-// ========== ESTADO EM MEMÓRIA ==========
+// ===== ESTADO EM MEMÓRIA =====
 const users = new Map();
 const sessions = new Map();
 const userFavorites = new Map();
@@ -58,7 +136,32 @@ const roomLikes = new Map();
 const roomVotes = new Map();
 const waitingRooms = new Map();
 
-// ========== FUNÇÕES DE APOIO ==========
+// ===== FUNÇÕES DE APOIO =====
+function escapeHtml(text) {
+  if (!text) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// Sanitiza objetos antes de enviar ao cliente
+function sanitizeRoom(room) {
+  return {
+    ...room,
+    name: escapeHtml(room.name),
+    queue: room.queue.map(t => ({ ...t, title: escapeHtml(t.title), artist: escapeHtml(t.artist), dj: escapeHtml(t.dj) })),
+    waitingQueue: room.waitingQueue.map(t => ({ ...t, title: escapeHtml(t.title), artist: escapeHtml(t.artist), dj: escapeHtml(t.dj) })),
+    admin: escapeHtml(room.admin),
+    pinnedMessage: room.pinnedMessage ? { ...room.pinnedMessage, text: escapeHtml(room.pinnedMessage.text), author: escapeHtml(room.pinnedMessage.author) } : null,
+    history: room.history.slice(-10).map(t => ({ ...t, title: escapeHtml(t.title), artist: escapeHtml(t.artist) })),
+  };
+}
+
 function getRoomLikes(slug) {
   if (!roomLikes.has(slug)) roomLikes.set(slug, {});
   return roomLikes.get(slug);
@@ -74,7 +177,7 @@ function createRoom(slug, name, adminName = null) {
   roomVotes.set(slug, {});
   waitingRooms.set(slug, []);
   return {
-    slug, name, admin: adminName,
+    slug, name: escapeHtml(name), admin: escapeHtml(adminName || 'Sistema'),
     queue: [], waitingQueue: [],
     currentIndex: 0, startedAt: Date.now(),
     votes: { up: 0, down: 0 }, bannedUsers: [],
@@ -88,9 +191,13 @@ function createRoom(slug, name, adminName = null) {
   };
 }
 
-// ========== FUNÇÕES FIREBASE ==========
+// ===== FIREBASE HELPERS =====
 async function getUserFromFirestore(email) {
-  try { const doc = await db.collection('users').doc(email).get(); if (doc.exists) return doc.data(); } catch (e) {}
+  if (!email) return null;
+  try {
+    const doc = await db.collection('users').doc(email).get();
+    if (doc.exists) return doc.data();
+  } catch (e) { console.error('Firestore read error:', e.message); }
   return null;
 }
 async function setUserInFirestore(email, data) {
@@ -114,80 +221,78 @@ async function setPointsInFirestore(email, data) {
 async function loadAllUsers() {
   try {
     const snapshot = await db.collection('users').get();
-    snapshot.forEach(doc => { users.set(doc.data().email, doc.data()); });
-    console.log(`✅ ${users.size} usuários carregados do Firestore.`);
-  } catch (e) {}
+    snapshot.forEach(doc => { users.set(doc.id, doc.data()); });
+    console.log(`✅ ${users.size} usuários carregados.`);
+  } catch (e) { console.error('Erro ao carregar usuários:', e.message); }
 }
 loadAllUsers();
 
+// Sala inicial
 rooms.set('lounge', createRoom('lounge', 'Lounge Sonora', 'Sistema'));
-console.log('✅ Sala inicial "lounge" criada com sucesso!');
+console.log('✅ Sala inicial "lounge" criada.');
 
-// ========== FUNÇÕES AUXILIARES ==========
+// ===== FUNÇÕES DE SALA =====
 function getPosition(room) {
   const track = room.queue[room.currentIndex];
   if (!track) return 0;
   return Math.min((Date.now() - room.startedAt) / 1000, track.duration || 180);
 }
+
 function broadcastState(slug) {
   const room = rooms.get(slug);
   if (!room) return;
+  const safeRoom = sanitizeRoom(room);
   io.to(slug).emit('roomState', {
-    slug: room.slug, name: room.name,
-    currentIndex: room.currentIndex,
+    slug: safeRoom.slug,
+    name: safeRoom.name,
+    currentIndex: safeRoom.currentIndex,
     position: getPosition(room),
-    votes: room.votes,
-    queue: room.queue,
-    waitingQueue: room.waitingQueue,
-    admin: room.admin,
-    isPlaying: room.isPlaying,
-    history: room.history.slice(-10),
-    radioMode: room.radioMode,
-    pinnedMessage: room.pinnedMessage,
-    listenerCount: room.listenerCount,
+    votes: safeRoom.votes,
+    queue: safeRoom.queue,
+    waitingQueue: safeRoom.waitingQueue,
+    admin: safeRoom.admin,
+    isPlaying: safeRoom.isPlaying,
+    history: safeRoom.history,
+    radioMode: safeRoom.radioMode,
+    pinnedMessage: safeRoom.pinnedMessage,
+    listenerCount: safeRoom.listenerCount,
     maxListeners: settings.maxListeners,
-    color: room.color,
-    inviteCount: room.inviteCount,
-    eventStartTime: room.eventStartTime,
+    color: safeRoom.color,
+    inviteCount: safeRoom.inviteCount,
+    eventStartTime: safeRoom.eventStartTime,
   });
 }
+
 function broadcastUsers(slug) {
   io.in(slug).fetchSockets().then(sockets => {
     const userList = sockets.map(s => ({
-      name: s.userName || 'Anônimo', color: s.userColor || '#888', isAdmin: s.isAdmin || false, avatar: s.userAvatar || '👤',
-      points: userPoints.get(s.userEmail)?.points || 0, badges: userPoints.get(s.userEmail)?.badges || [],
+      name: escapeHtml(s.userName || 'Anônimo'),
+      color: s.userColor || '#888',
+      isAdmin: s.isAdmin || false,
+      avatar: escapeHtml(s.userAvatar || '👤'),
+      points: userPoints.get(s.userEmail)?.points || 0,
+      badges: (userPoints.get(s.userEmail)?.badges || []).map(escapeHtml),
     }));
     io.to(slug).emit('users', userList);
-  });
+  }).catch(() => {});
 }
+
 function addSystemMsg(slug, text) {
   const room = rooms.get(slug);
   if (!room) return;
-  const msg = { _id: Date.now().toString() + Math.random(), user: 'Sistema', text, color: '#888', isSystem: true, createdAt: new Date() };
+  const msg = {
+    _id: Date.now().toString() + Math.random(),
+    user: 'Sistema',
+    text: escapeHtml(text),
+    color: '#888',
+    isSystem: true,
+    createdAt: new Date()
+  };
   room.chatHistory.push(msg);
   if (room.chatHistory.length > 300) room.chatHistory.shift();
   io.to(slug).emit('chat', msg);
 }
-function autoShuffle(room) {
-  if (!room || room.queue.length <= 1) return;
-  const current = room.queue[room.currentIndex];
-  if (!current) return;
-  const rest = room.queue.filter((_, i) => i !== room.currentIndex);
-  for (let i = rest.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [rest[i], rest[j]] = [rest[j], rest[i]];
-  }
-  room.queue = [current, ...rest];
-  room.currentIndex = 0;
-  const votes = getRoomVotes(room.slug);
-  const newVotes = {};
-  room.queue.forEach((track, idx) => {
-    const oldIndex = room.queue.findIndex(t => t.id === track.id);
-    if (votes[oldIndex] !== undefined) newVotes[idx] = votes[oldIndex];
-  });
-  roomVotes.set(room.slug, newVotes);
-  broadcastState(room.slug);
-}
+
 function advanceQueue(slug) {
   const room = rooms.get(slug);
   if (!room || !room.isPlaying || room.queue.length === 0) {
@@ -209,7 +314,11 @@ function advanceQueue(slug) {
   if (Date.now() - room.lastAdvanceAt < 10000) return false;
   room.lastAdvanceAt = Date.now();
   const current = room.queue[room.currentIndex];
-  if (current) { room.history.push(current); if (room.history.length > 50) room.history.shift(); updateMostVoted(room, current); }
+  if (current) {
+    room.history.push(current);
+    if (room.history.length > 50) room.history.shift();
+    updateMostVoted(room, current);
+  }
   room.queue.shift();
   room.currentIndex = 0;
   room.startedAt = Date.now();
@@ -224,140 +333,181 @@ function advanceQueue(slug) {
   const newVotes = {};
   room.queue.forEach((_, i) => { if (votes[i + 1]) newVotes[i] = votes[i + 1]; });
   roomVotes.set(slug, newVotes);
-  autoShuffle(room);
   broadcastState(slug);
   if (room.queue.length > 0) {
     const next = room.queue[0];
     addSystemMsg(slug, `▶ ${next.title} — ${next.artist}`);
   } else {
-    if (room.radioMode) { startRadio(slug); }
-    else { room.isPlaying = false; broadcastState(slug); addSystemMsg(slug, '🏁 Fila encerrada. Adicione músicas!'); io.to(slug).emit('queueEmpty'); }
+    room.isPlaying = false;
+    broadcastState(slug);
+    addSystemMsg(slug, '🏁 Fila encerrada. Adicione músicas!');
+    io.to(slug).emit('queueEmpty');
   }
   return true;
 }
-async function startRadio(slug) {
-  const room = rooms.get(slug);
-  if (!room || !room.radioMode) return;
-  try {
-    let query = room.radioGenre || 'pop';
-    if (room.history.length > 0) { const last = room.history[room.history.length - 1]; if (last && last.title) query = last.title + ' ' + (last.artist || ''); }
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=5&q=${encodeURIComponent(query)}&key=${YOUTUBE_API_KEY}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Erro na busca');
-    const data = await response.json();
-    const items = data.items.map(item => ({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, duration: null }));
-    for (const song of items) { if (room.queue.length >= settings.maxQueue) break; song.dj = '🎧 Rádio'; room.queue.push(song); }
-    if (room.queue.length > 0) { room.isPlaying = true; room.currentIndex = 0; room.startedAt = Date.now(); room.lastAdvanceAt = Date.now(); const next = room.queue[0]; addSystemMsg(slug, `📻 Rádio automático: ▶ ${next.title} — ${next.artist}`); broadcastState(slug); }
-  } catch (e) { console.error('Erro no modo rádio:', e.message); addSystemMsg(slug, '⚠️ Erro ao buscar músicas para o rádio.'); room.isPlaying = false; broadcastState(slug); }
-}
-setInterval(() => {
-  for (const [slug, room] of rooms) {
-    if (!room.isPlaying || room.queue.length === 0) continue;
-    const track = room.queue[room.currentIndex];
-    if (!track) continue;
-    const pos = getPosition(room);
-    const duration = track.duration || 180;
-    if (pos >= duration - 2) advanceQueue(slug);
-  }
-}, 2000);
+
 function updateMostVoted(room, track) {
   const upVotes = room.votes?.up || 0;
   if (upVotes > 0) {
     const entry = room.mostVoted.find(t => t.id === track.id);
-    if (entry) { entry.votes += upVotes; } else { room.mostVoted.push({ id: track.id, title: track.title, artist: track.artist, votes: upVotes }); }
+    if (entry) { entry.votes += upVotes; }
+    else { room.mostVoted.push({ id: track.id, title: track.title, artist: track.artist, votes: upVotes }); }
     room.mostVoted.sort((a, b) => b.votes - a.votes);
     if (room.mostVoted.length > 20) room.mostVoted.pop();
   }
 }
-async function sendDiscordWebhook(webhookUrl, message) {
-  if (!webhookUrl) return;
-  try { await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: message }) }); } catch (e) {}
-}
 
-// ========== ROTAS ==========
+// ===== ROTAS =====
 app.post('/api/signup', async (req, res) => {
-  const { nome, email, senha, estilos } = req.body;
-  if (!nome || nome.length < 2) return res.status(400).json({ error: 'Nome inválido' });
-  if (!email || !email.includes('@')) return res.status(400).json({ error: 'E-mail inválido' });
-  if (!senha || senha.length < 6) return res.status(400).json({ error: 'Senha deve ter 6+ caracteres' });
-  if (!estilos || estilos.length === 0) return res.status(400).json({ error: 'Escolha um estilo' });
-
   try {
+    let { nome, email, senha, estilos } = req.body;
+    // Validação e sanitização
+    nome = (nome || '').trim().slice(0, 60);
+    email = (email || '').trim().toLowerCase().slice(0, 120);
+    senha = (senha || '').trim();
+    estilos = Array.isArray(estilos) ? estilos.slice(0, 10).map(s => escapeHtml(s)) : [];
+
+    if (!nome || nome.length < 2) return res.status(400).json({ error: 'Nome inválido (mínimo 2 caracteres)' });
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'E-mail inválido' });
+    if (!senha || senha.length < 6) return res.status(400).json({ error: 'Senha deve ter 6+ caracteres' });
+    if (estilos.length === 0) return res.status(400).json({ error: 'Escolha pelo menos um estilo' });
+
     const existing = await db.collection('users').doc(email).get();
     if (existing.exists) return res.status(400).json({ error: 'E-mail já cadastrado' });
 
-    const userData = { nome, email, estilos, avatar: '🎸', criadoEm: new Date(), theme: 'dark', fontSize: 16, colorblind: false, discordWebhook: null };
+    const userData = {
+      nome: escapeHtml(nome),
+      email,
+      estilos,
+      avatar: '🎸',
+      criadoEm: new Date(),
+      theme: 'dark',
+      fontSize: 16,
+      colorblind: false,
+      discordWebhook: null,
+    };
     await setUserInFirestore(email, userData);
     users.set(email, userData);
     await setPointsInFirestore(email, { points: 0, badges: [] });
     userPoints.set(email, { points: 0, badges: [] });
     await setFavoritesInFirestore(email, []);
     userFavorites.set(email, []);
-    res.json({ success: true, nome, email });
-  } catch (e) { console.error('Erro no signup:', e.message); res.status(500).json({ error: 'Erro ao salvar dados no Firestore: ' + e.message }); }
+    res.json({ success: true, nome: userData.nome, email });
+  } catch (e) {
+    console.error('Erro no signup:', e.message);
+    res.status(500).json({ error: 'Erro interno ao criar conta.' });
+  }
 });
 
 app.post('/api/login', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Preencha e-mail' });
-
   try {
+    let { email } = req.body;
+    email = (email || '').trim().toLowerCase().slice(0, 120);
+    if (!email) return res.status(400).json({ error: 'Preencha e-mail' });
+
     const userDoc = await db.collection('users').doc(email).get();
     if (!userDoc.exists) return res.status(401).json({ error: 'Usuário não encontrado' });
 
     const userData = userDoc.data();
+    if (userData.banned) return res.status(403).json({ error: 'Usuário banido' });
+
     if (!users.has(email)) users.set(email, userData);
 
     const token = crypto.randomBytes(64).toString('hex');
     sessions.set(token, email);
-    res.cookie('sessionToken', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax', path: '/' });
+
+    const isSecure = process.env.NODE_ENV === 'production';
+    res.cookie('sessionToken', token, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
 
     const points = await getPointsFromFirestore(email);
-    res.json({ success: true, user: { ...userData, points: points.points, badges: points.badges } });
-  } catch (e) { res.status(401).json({ error: 'Credenciais inválidas' }); }
+    res.json({
+      success: true,
+      user: {
+        ...userData,
+        points: points.points,
+        badges: points.badges || [],
+      }
+    });
+  } catch (e) {
+    console.error('Erro no login:', e.message);
+    res.status(500).json({ error: 'Erro interno no login.' });
+  }
 });
 
 app.post('/api/logout', (req, res) => {
   const token = req.cookies.sessionToken;
   if (token) sessions.delete(token);
-  res.clearCookie('sessionToken');
+  res.clearCookie('sessionToken', { path: '/' });
   res.json({ success: true });
 });
 
 app.get('/api/me', async (req, res) => {
-  const token = req.cookies.sessionToken;
-  if (!token) return res.status(401).json({ error: 'Não autenticado' });
-  const email = sessions.get(token);
-  if (!email) return res.status(401).json({ error: 'Sessão inválida' });
-  const userData = users.get(email) || await getUserFromFirestore(email);
-  if (!userData) { sessions.delete(token); return res.status(401).json({ error: 'Usuário não encontrado' }); }
-  const points = userPoints.get(email) || await getPointsFromFirestore(email);
-  res.json({ success: true, user: { ...userData, points: points.points, badges: points.badges } });
+  try {
+    const token = req.cookies.sessionToken;
+    if (!token) return res.status(401).json({ error: 'Não autenticado' });
+    const email = sessions.get(token);
+    if (!email) return res.status(401).json({ error: 'Sessão inválida' });
+    const userData = users.get(email) || await getUserFromFirestore(email);
+    if (!userData) { sessions.delete(token); return res.status(401).json({ error: 'Usuário não encontrado' }); }
+    if (userData.banned) { sessions.delete(token); return res.status(403).json({ error: 'Usuário banido' }); }
+    const points = userPoints.get(email) || await getPointsFromFirestore(email);
+    res.json({
+      success: true,
+      user: {
+        ...userData,
+        points: points.points,
+        badges: points.badges || [],
+      }
+    });
+  } catch (e) {
+    console.error('Erro no /me:', e.message);
+    res.status(500).json({ error: 'Erro interno' });
+  }
 });
 
-// ========== SALAS ==========
+// ===== SALAS =====
 app.get('/api/rooms', (req, res) => {
   try {
     const list = Array.from(rooms.values()).map(r => ({
-      slug: r.slug, name: r.name, listenerCount: r.listenerCount,
-      queueLength: r.queue.length, isPlaying: r.isPlaying,
-      currentTrack: r.queue[r.currentIndex] || null,
-      radioMode: r.radioMode, color: r.color || '#7c3aed',
-      inviteCount: r.inviteCount, eventStartTime: r.eventStartTime,
+      slug: r.slug,
+      name: escapeHtml(r.name),
+      listenerCount: r.listenerCount,
+      queueLength: r.queue.length,
+      isPlaying: r.isPlaying,
+      currentTrack: r.queue[r.currentIndex] ? { ...r.queue[r.currentIndex], title: escapeHtml(r.queue[r.currentIndex].title), artist: escapeHtml(r.queue[r.currentIndex].artist) } : null,
+      radioMode: r.radioMode,
+      color: r.color,
+      inviteCount: r.inviteCount,
+      eventStartTime: r.eventStartTime,
     }));
     res.json(list);
-  } catch (e) { console.error('Erro na rota /api/rooms:', e.message); res.status(500).json({ error: 'Erro interno ao listar salas' }); }
+  } catch (e) {
+    console.error('Erro em /api/rooms:', e.message);
+    res.status(500).json({ error: 'Erro interno' });
+  }
 });
 
 app.post('/api/rooms', (req, res) => {
-  const { name, adminName, color } = req.body;
-  if (!name || name.trim().length < 2) return res.status(400).json({ error: 'Nome inválido' });
-  const slug = name.trim().toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36);
-  if (rooms.has(slug)) return res.status(400).json({ error: 'Sala já existe' });
-  const room = createRoom(slug, name.trim(), adminName || 'Anônimo');
-  if (color) room.color = color;
-  rooms.set(slug, room);
-  res.json({ slug, name: room.name });
+  try {
+    let { name, adminName, color } = req.body;
+    name = (name || '').trim().slice(0, 40);
+    if (!name || name.length < 2) return res.status(400).json({ error: 'Nome inválido' });
+    const slug = escapeHtml(name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36));
+    if (rooms.has(slug)) return res.status(400).json({ error: 'Sala já existe' });
+    const room = createRoom(slug, name, adminName || 'Anônimo');
+    if (color) room.color = color;
+    rooms.set(slug, room);
+    res.json({ slug, name: room.name });
+  } catch (e) {
+    console.error('Erro ao criar sala:', e.message);
+    res.status(500).json({ error: 'Erro interno' });
+  }
 });
 
 app.get('/api/rooms/random', (req, res) => {
@@ -370,13 +520,18 @@ app.get('/api/rooms/random', (req, res) => {
 app.get('/api/room/:slug/queue', (req, res) => {
   const room = rooms.get(req.params.slug);
   if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
-  res.json({ queue: room.queue, currentIndex: room.currentIndex });
+  res.json({
+    queue: room.queue.map(t => ({ ...t, title: escapeHtml(t.title), artist: escapeHtml(t.artist) })),
+    currentIndex: room.currentIndex,
+  });
 });
 
 app.get('/api/room/:slug/stats', (req, res) => {
   const room = rooms.get(req.params.slug);
   if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
-  res.json({ mostVoted: room.mostVoted.slice(0, 10) });
+  res.json({
+    mostVoted: room.mostVoted.slice(0, 10).map(t => ({ ...t, title: escapeHtml(t.title), artist: escapeHtml(t.artist) })),
+  });
 });
 
 app.post('/api/room/:slug/invite', (req, res) => {
@@ -386,29 +541,14 @@ app.post('/api/room/:slug/invite', (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/room/:slug/webhook', (req, res) => {
-  const room = rooms.get(req.params.slug);
-  if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
-  room.discordWebhook = req.body.webhookUrl || null;
-  res.json({ success: true });
-});
-
-app.post('/api/room/:slug/event', (req, res) => {
-  const room = rooms.get(req.params.slug);
-  if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
-  room.eventStartTime = req.body.startTime || null;
-  broadcastState(req.params.slug);
-  res.json({ success: true });
-});
-
-// ========== FAVORITOS ==========
+// ===== FAVORITOS =====
 app.get('/api/favorites', async (req, res) => {
   const token = req.cookies.sessionToken;
   if (!token) return res.status(401).json({ error: 'Não autenticado' });
   const email = sessions.get(token);
   if (!email) return res.status(401).json({ error: 'Sessão inválida' });
   const favs = await getFavoritesFromFirestore(email);
-  res.json(favs);
+  res.json(favs.map(f => ({ ...f, title: escapeHtml(f.title), artist: escapeHtml(f.artist) })));
 });
 
 app.post('/api/favorites', async (req, res) => {
@@ -416,11 +556,13 @@ app.post('/api/favorites', async (req, res) => {
   if (!token) return res.status(401).json({ error: 'Não autenticado' });
   const email = sessions.get(token);
   if (!email) return res.status(401).json({ error: 'Sessão inválida' });
-  const { videoId, title, artist } = req.body;
-  if (!videoId) return res.status(400).json({ error: 'ID do vídeo necessário' });
+  let { videoId, title, artist } = req.body;
+  if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return res.status(400).json({ error: 'ID inválido' });
+  title = escapeHtml((title || 'Música').slice(0, 100));
+  artist = escapeHtml((artist || 'Desconhecido').slice(0, 100));
   let favs = await getFavoritesFromFirestore(email);
   if (!favs.find(f => f.id === videoId)) {
-    favs.push({ id: videoId, title: title || 'Música', artist: artist || 'Desconhecido' });
+    favs.push({ id: videoId, title, artist });
     await setFavoritesInFirestore(email, favs);
     userFavorites.set(email, favs);
   }
@@ -440,14 +582,15 @@ app.delete('/api/favorites/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-// ========== AVATAR ==========
+// ===== AVATAR =====
 app.post('/api/update-avatar', async (req, res) => {
   const token = req.cookies.sessionToken;
   if (!token) return res.status(401).json({ error: 'Não autenticado' });
   const email = sessions.get(token);
   if (!email) return res.status(401).json({ error: 'Sessão inválida' });
-  const { avatar } = req.body;
+  let { avatar } = req.body;
   if (!avatar) return res.status(400).json({ error: 'Avatar necessário' });
+  avatar = escapeHtml(avatar.slice(0, 10));
   const userData = users.get(email) || await getUserFromFirestore(email);
   if (!userData) return res.status(404).json({ error: 'Usuário não encontrado' });
   userData.avatar = avatar;
@@ -456,8 +599,16 @@ app.post('/api/update-avatar', async (req, res) => {
   res.json({ success: true });
 });
 
-// ========== ADMIN ROTAS ==========
+// ===== ADMIN ROTAS (com verificação extra) =====
+function isAdmin(email) {
+  return adminEmails.has(email);
+}
+
 app.get('/api/admin/stats', async (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
   try {
     const snapshot = await db.collection('users').get();
     const totalUsers = snapshot.size;
@@ -468,46 +619,67 @@ app.get('/api/admin/stats', async (req, res) => {
 });
 
 app.get('/api/admin/users', async (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
   try {
     const snapshot = await db.collection('users').get();
     const usersList = [];
     snapshot.forEach(doc => {
       const data = doc.data();
-      usersList.push({ email: doc.id, nome: data.nome, isAdmin: adminEmails.has(doc.id) });
+      usersList.push({
+        email: doc.id,
+        nome: escapeHtml(data.nome),
+        isAdmin: isAdmin(doc.id),
+      });
     });
     res.json(usersList);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/promote', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email necessário' });
-  adminEmails.add(email);
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
+  const { email: targetEmail } = req.body;
+  if (!targetEmail) return res.status(400).json({ error: 'Email necessário' });
+  adminEmails.add(targetEmail);
   res.json({ success: true });
 });
 
 app.post('/api/admin/delete-user', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email necessário' });
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
+  const { email: targetEmail } = req.body;
+  if (!targetEmail) return res.status(400).json({ error: 'Email necessário' });
+  if (targetEmail === email) return res.status(400).json({ error: 'Não pode deletar a si mesmo' });
   try {
-    await db.collection('users').doc(email).delete();
-    await db.collection('favorites').doc(email).delete();
-    await db.collection('points').doc(email).delete();
-    users.delete(email);
-    userPoints.delete(email);
-    userFavorites.delete(email);
+    await db.collection('users').doc(targetEmail).delete();
+    await db.collection('favorites').doc(targetEmail).delete();
+    await db.collection('points').doc(targetEmail).delete();
+    users.delete(targetEmail);
+    userPoints.delete(targetEmail);
+    userFavorites.delete(targetEmail);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/kick-user', (req, res) => {
-  const { email, roomSlug } = req.body;
-  if (!email || !roomSlug) return res.status(400).json({ error: 'Dados incompletos' });
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
+  const { email: targetEmail, roomSlug } = req.body;
+  if (!targetEmail || !roomSlug) return res.status(400).json({ error: 'Dados incompletos' });
   const room = rooms.get(roomSlug);
   if (!room) return res.status(404).json({ error: 'Sala não encontrada' });
   io.in(roomSlug).fetchSockets().then(sockets => {
     for (const socket of sockets) {
-      if (socket.userEmail === email) {
+      if (socket.userEmail === targetEmail) {
         socket.emit('kicked', 'Você foi expulso da sala pelo admin.');
         socket.leave(roomSlug);
         room.listenerCount = Math.max(0, room.listenerCount - 1);
@@ -522,15 +694,19 @@ app.post('/api/admin/kick-user', (req, res) => {
 });
 
 app.post('/api/admin/ban-user', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email necessário' });
-  const userData = await getUserFromFirestore(email);
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
+  const { email: targetEmail } = req.body;
+  if (!targetEmail) return res.status(400).json({ error: 'Email necessário' });
+  const userData = await getUserFromFirestore(targetEmail);
   if (!userData) return res.status(404).json({ error: 'Usuário não encontrado' });
   userData.banned = true;
-  await setUserInFirestore(email, userData);
+  await setUserInFirestore(targetEmail, userData);
   io.fetchSockets().then(sockets => {
     for (const socket of sockets) {
-      if (socket.userEmail === email) {
+      if (socket.userEmail === targetEmail) {
         socket.emit('banned', 'Você foi banido do Sonora Fan.');
         socket.disconnect();
       }
@@ -540,6 +716,10 @@ app.post('/api/admin/ban-user', async (req, res) => {
 });
 
 app.post('/api/admin/remove-song', (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
   const { roomSlug, index } = req.body;
   if (roomSlug === undefined || index === undefined) return res.status(400).json({ error: 'Dados incompletos' });
   const room = rooms.get(roomSlug);
@@ -557,6 +737,10 @@ app.post('/api/admin/remove-song', (req, res) => {
 });
 
 app.post('/api/admin/clear-all-chats', (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
   for (const [slug, room] of rooms) {
     room.chatHistory = [];
     roomLikes.set(slug, {});
@@ -566,6 +750,10 @@ app.post('/api/admin/clear-all-chats', (req, res) => {
 });
 
 app.post('/api/admin/clear-all-rooms', (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
   for (const [slug, room] of rooms) {
     if (slug === 'lounge') continue;
     io.to(slug).emit('roomClosed', 'Sala removida pelo admin.');
@@ -578,6 +766,10 @@ app.post('/api/admin/clear-all-rooms', (req, res) => {
 });
 
 app.get('/api/admin/export-data', (req, res) => {
+  const token = req.cookies.sessionToken;
+  if (!token) return res.status(401).json({ error: 'Não autenticado' });
+  const email = sessions.get(token);
+  if (!email || !isAdmin(email)) return res.status(403).json({ error: 'Acesso negado' });
   const data = {
     users: Array.from(users.values()),
     rooms: Array.from(rooms.values()).map(r => ({ ...r, lastAddTime: undefined, skipVotes: undefined })),
@@ -588,7 +780,7 @@ app.get('/api/admin/export-data', (req, res) => {
   res.json(data);
 });
 
-// ========== API DO YOUTUBE ==========
+// ===== YOUTUBE API =====
 app.get('/api/search-youtube', async (req, res) => {
   const query = req.query.q;
   if (!query || query.length < 2) return res.json({ items: [] });
@@ -597,34 +789,48 @@ app.get('/api/search-youtube', async (req, res) => {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    const items = data.items.map(item => ({ id: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, thumb: item.snippet.thumbnails.default.url }));
+    const items = data.items.map(item => ({
+      id: item.id.videoId,
+      title: escapeHtml(item.snippet.title),
+      artist: escapeHtml(item.snippet.channelTitle),
+      thumb: item.snippet.thumbnails.default.url,
+    }));
     res.json({ items });
-  } catch (e) { console.error('Erro na busca do YouTube:', e.message); res.status(500).json({ error: 'Erro ao buscar vídeos: ' + e.message, items: [] }); }
+  } catch (e) {
+    console.error('Erro na busca do YouTube:', e.message);
+    res.status(500).json({ error: 'Erro ao buscar vídeos', items: [] });
+  }
 });
-
-function fetchUrl(url) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 8000 }, (res) => {
-      if (res.statusCode !== 200) { res.resume(); return reject(new Error('HTTP ' + res.statusCode)); }
-      let data = ''; res.setEncoding('utf8');
-      res.on('data', chunk => { data += chunk; if (data.length > 4e6) req.destroy(); });
-      res.on('end', () => resolve(data));
-    });
-    req.on('timeout', () => req.destroy(new Error('timeout')));
-    req.on('error', reject);
-  });
-}
 
 app.get('/api/video-info', async (req, res) => {
   const id = String(req.query.id || '').trim();
   if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) return res.status(400).json({ error: 'ID inválido' });
   const info = { id, title: null, artist: null, duration: null };
   try {
-    const raw = await fetchUrl(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`);
-    const data = JSON.parse(raw); info.title = data.title || null; info.artist = data.author_name || null;
-  } catch (e) {}
+    const raw = await new Promise((resolve, reject) => {
+      const req = https.get(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`, { timeout: 5000 }, (resp) => {
+        let data = '';
+        resp.on('data', chunk => data += chunk);
+        resp.on('end', () => resolve(data));
+      });
+      req.on('error', reject);
+      req.end();
+    });
+    const data = JSON.parse(raw);
+    info.title = escapeHtml(data.title || null);
+    info.artist = escapeHtml(data.author_name || null);
+  } catch (e) { /* ignora */ }
+
   try {
-    const html = await fetchUrl(`https://www.youtube.com/watch?v=${id}`);
+    const html = await new Promise((resolve, reject) => {
+      const req = https.get(`https://www.youtube.com/watch?v=${id}`, { timeout: 5000 }, (resp) => {
+        let data = '';
+        resp.on('data', chunk => data += chunk);
+        resp.on('end', () => resolve(data));
+      });
+      req.on('error', reject);
+      req.end();
+    });
     const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
     if (jsonLdMatch) {
       try { const jsonLd = JSON.parse(jsonLdMatch[1]); if (jsonLd.duration) { const match = jsonLd.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/); if (match) { info.duration = (parseInt(match[1] || 0) * 3600) + (parseInt(match[2] || 0) * 60) + parseInt(match[3] || 0); } } } catch (e) {}
@@ -633,13 +839,16 @@ app.get('/api/video-info', async (req, res) => {
       const playerResponseMatch = html.match(/var ytInitialPlayerResponse\s*=\s*({[\s\S]*?});/);
       if (playerResponseMatch) { try { const data = JSON.parse(playerResponseMatch[1]); if (data.videoDetails && data.videoDetails.lengthSeconds) info.duration = parseInt(data.videoDetails.lengthSeconds, 10); } catch (e) {} }
     }
-    if (!info.title) { const titleMatch = html.match(/<title>([^<]+)<\/title>/); if (titleMatch) info.title = titleMatch[1].replace(/ - YouTube\s*$/, '').trim(); }
-  } catch (e) {}
-  if (!info.title) info.title = 'Vídeo do YouTube (ID: ' + id + ')';
+    if (!info.title) {
+      const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+      if (titleMatch) info.title = escapeHtml(titleMatch[1].replace(/ - YouTube\s*$/, '').trim());
+    }
+  } catch (e) { /* ignora */ }
+  if (!info.title) info.title = 'Vídeo do YouTube (ID: ' + escapeHtml(id) + ')';
   res.json(info);
 });
 
-// ========== SOCKET ==========
+// ===== SOCKET.IO =====
 io.on('connection', (socket) => {
   let currentRoom = null;
   let userEmail = null;
@@ -662,16 +871,16 @@ io.on('connection', (socket) => {
       }
       currentRoom = slug;
       socket.join(slug);
-      socket.userName = name;
+      socket.userName = escapeHtml(name.slice(0, 60));
       socket.userColor = colors[Math.floor(Math.random() * colors.length)];
-      socket.userAvatar = avatar || '👤';
+      socket.userAvatar = escapeHtml(avatar || '👤');
       room.listenerCount++;
       const cookie = socket.handshake.headers.cookie || '';
       const tokenMatch = cookie.match(/sessionToken=([^;]+)/);
       const email = tokenMatch ? sessions.get(tokenMatch[1]) : null;
       userEmail = email;
       socket.userEmail = email;
-      const isGlobalAdmin = adminEmails.has(email);
+      const isGlobalAdmin = isAdmin(email);
       const isRoomAdmin = room.admin === name;
       socket.isAdmin = isGlobalAdmin || isRoomAdmin;
       if (isGlobalAdmin && !room.admin) room.admin = name;
@@ -680,12 +889,25 @@ io.on('connection', (socket) => {
       socket.emit('likesState', getRoomLikes(slug));
       socket.emit('votesState', getRoomVotes(slug));
 
+      const safeRoom = sanitizeRoom(room);
       socket.emit('roomState', {
-        slug: room.slug, name: room.name, currentIndex: room.currentIndex,
-        position: getPosition(room), votes: room.votes, queue: room.queue, waitingQueue: room.waitingQueue,
-        admin: room.admin, isPlaying: room.isPlaying, history: room.history.slice(-10), radioMode: room.radioMode,
-        pinnedMessage: room.pinnedMessage, listenerCount: room.listenerCount, maxListeners: settings.maxListeners,
-        color: room.color, inviteCount: room.inviteCount, eventStartTime: room.eventStartTime,
+        slug: safeRoom.slug,
+        name: safeRoom.name,
+        currentIndex: safeRoom.currentIndex,
+        position: getPosition(room),
+        votes: safeRoom.votes,
+        queue: safeRoom.queue,
+        waitingQueue: safeRoom.waitingQueue,
+        admin: safeRoom.admin,
+        isPlaying: safeRoom.isPlaying,
+        history: safeRoom.history,
+        radioMode: safeRoom.radioMode,
+        pinnedMessage: safeRoom.pinnedMessage,
+        listenerCount: safeRoom.listenerCount,
+        maxListeners: settings.maxListeners,
+        color: safeRoom.color,
+        inviteCount: safeRoom.inviteCount,
+        eventStartTime: safeRoom.eventStartTime,
       });
       socket.emit('chatHistory', room.chatHistory.slice(-150));
       socket.emit('isAdmin', socket.isAdmin);
@@ -715,7 +937,16 @@ io.on('connection', (socket) => {
       const parts = text.trim().split(' ');
       const command = parts[0].toLowerCase();
       if (command.startsWith('/')) { handleCommand(socket, command, parts.slice(1), room); return; }
-      const msg = { _id: Date.now().toString() + Math.random(), user: socket.userName, text: text.trim(), color: socket.userColor, isSystem: false, isAdmin: socket.isAdmin || false, avatar: socket.userAvatar || '👤', createdAt: new Date() };
+      const msg = {
+        _id: Date.now().toString() + Math.random(),
+        user: socket.userName,
+        text: escapeHtml(text.trim()),
+        color: socket.userColor,
+        isSystem: false,
+        isAdmin: socket.isAdmin || false,
+        avatar: socket.userAvatar || '👤',
+        createdAt: new Date(),
+      };
       room.chatHistory.push(msg);
       if (room.chatHistory.length > 300) room.chatHistory.shift();
       io.to(currentRoom).emit('chat', msg);
@@ -727,9 +958,10 @@ io.on('connection', (socket) => {
     let reply = '';
     switch(cmd) {
       case '/stats':
-        let stats = '📊 Estatísticas da sala:\n'; const userCounts = {};
+        let stats = '📊 Estatísticas da sala:\n';
+        const userCounts = {};
         room.queue.forEach(t => { const dj = t.dj || 'Desconhecido'; userCounts[dj] = (userCounts[dj] || 0) + 1; });
-        Object.entries(userCounts).sort((a,b) => b[1] - a[1]).forEach(([user, count]) => { stats += `  ${user}: ${count} música(s)\n`; });
+        Object.entries(userCounts).sort((a,b) => b[1] - a[1]).forEach(([user, count]) => { stats += `  ${escapeHtml(user)}: ${count} música(s)\n`; });
         stats += `Total: ${room.queue.length} músicas | Histórico: ${room.history.length}`;
         socket.emit('chat', { _id: Date.now().toString() + Math.random(), user: 'Sistema', text: stats, color: '#888', isSystem: true, createdAt: new Date() });
         break;
@@ -757,11 +989,11 @@ io.on('connection', (socket) => {
       case '/history':
         if (room.history.length === 0) { reply = 'Nenhuma música no histórico.'; break; }
         let hist = '📜 Histórico:\n';
-        room.history.slice(-5).forEach((t, i) => { hist += `  ${i+1}. ${t.title} — ${t.artist}\n`; });
+        room.history.slice(-5).forEach((t, i) => { hist += `  ${i+1}. ${escapeHtml(t.title)} — ${escapeHtml(t.artist)}\n`; });
         socket.emit('chat', { _id: Date.now().toString() + Math.random(), user: 'Sistema', text: hist, color: '#888', isSystem: true, createdAt: new Date() });
         return;
       default:
-        reply = `Comando desconhecido: ${cmd}. Use /stats, /vote, /clear (admin), /me, /history`;
+        reply = `Comando desconhecido: ${escapeHtml(cmd)}. Use /stats, /vote, /clear (admin), /me, /history`;
     }
     if (reply) socket.emit('chat', { _id: Date.now().toString() + Math.random(), user: 'Sistema', text: reply, color: '#888', isSystem: true, createdAt: new Date() });
   }
@@ -782,7 +1014,7 @@ io.on('connection', (socket) => {
       if (!currentRoom) return;
       const room = rooms.get(currentRoom);
       if (room.queue.length === 0) return;
-      if (socket.userName === room.admin || adminEmails.has(socket.userEmail)) { advanceQueue(currentRoom); addSystemMsg(currentRoom, `⏭️ ${socket.userName} pulou a música (admin)`); return; }
+      if (socket.userName === room.admin || isAdmin(socket.userEmail)) { advanceQueue(currentRoom); addSystemMsg(currentRoom, `⏭️ ${socket.userName} pulou a música (admin)`); return; }
       if (room.skipVotes.has(socket.userName)) { socket.emit('error', 'Você já votou para pular.'); return; }
       room.skipVotes.add(socket.userName);
       const totalListeners = room.listenerCount || 1;
@@ -816,16 +1048,14 @@ io.on('connection', (socket) => {
       song.dj = socket.userName; room.queue.push(song); room.lastAddTime.set(socket.userName, now); addPoints(socket.userEmail, 2);
       room.totalSongsAdded = (room.totalSongsAdded || 0) + 1;
       if (!room.isPlaying && room.queue.length === 1) { room.isPlaying = true; room.currentIndex = 0; room.startedAt = Date.now(); room.lastAdvanceAt = Date.now(); addSystemMsg(currentRoom, `▶ ${song.title} — ${song.artist}`); }
-      else { autoShuffle(room); }
       broadcastState(currentRoom);
-      if (room.discordWebhook) { const msg = `🎵 **${song.title}** por ${song.artist} foi adicionada por ${socket.userName} na sala **${room.name}**`; sendDiscordWebhook(room.discordWebhook, msg); }
       const musicMsg = { _id: Date.now().toString() + Math.random(), user: socket.userName, color: socket.userColor, isSystem: false, isAdmin: socket.isAdmin || false, isMusic: true, musicTitle: song.title, musicArtist: song.artist, createdAt: new Date() };
       room.chatHistory.push(musicMsg);
       if (room.chatHistory.length > 300) room.chatHistory.shift();
       io.to(currentRoom).emit('chat', musicMsg);
     } catch (e) {
-      console.error('❌ CRASH AO ADICIONAR MÚSICA:', e.message);
-      socket.emit('error', 'Erro interno ao adicionar música. Verifique os logs.');
+      console.error('❌ Erro ao adicionar música:', e.message);
+      socket.emit('error', 'Erro interno ao adicionar música.');
     }
   });
 
@@ -864,8 +1094,7 @@ io.on('connection', (socket) => {
   socket.on('reorderQueue', (newOrder) => {
     try {
       if (!currentRoom) { socket.emit('error', 'Você não está em uma sala'); return; }
-      const isGlobalAdmin = userEmail && adminEmails.has(userEmail);
-      if (!isGlobalAdmin && !socket.isAdmin) { socket.emit('error', 'Apenas admin pode reordenar'); return; }
+      if (!socket.isAdmin) { socket.emit('error', 'Apenas admin pode reordenar'); return; }
       const room = rooms.get(currentRoom);
       if (!room || room.queue.length === 0) return;
       const currentTrack = room.queue[room.currentIndex]; const currentId = currentTrack ? currentTrack.id : null;
@@ -904,11 +1133,10 @@ io.on('connection', (socket) => {
         delete votes[index];
         const newVotes = {};
         roomData.queue.forEach((_, i) => { if (votes[i + 1]) newVotes[i] = votes[i + 1]; });
-        roomVotes.set(room, newVotes); autoShuffle(roomData); broadcastState(room); io.to(room).emit('voteUpdate', { index, up: data.up, down: data.down, removed: true });
+        roomVotes.set(room, newVotes); broadcastState(room); io.to(room).emit('voteUpdate', { index, up: data.up, down: data.down, removed: true });
         addSystemMsg(room, `👎 "${removed.title}" foi removida por votação! (${data.down.length} votos negativos)`);
         return;
       }
-      if (type === 'up') autoShuffle(roomData);
       io.to(room).emit('voteUpdate', { index, up: data.up, down: data.down });
       broadcastState(room);
     } catch (e) { console.error('Erro no voteSong:', e.message); }
@@ -922,13 +1150,14 @@ io.on('connection', (socket) => {
   });
 });
 
-// ========== ROTAS EXTRAS ==========
+// ===== ROTAS EXTRAS =====
 app.get('/invite/:slug', (req, res) => {
   const room = rooms.get(req.params.slug);
   if (!room) return res.status(404).send('Sala não encontrada');
   room.inviteCount = (room.inviteCount || 0) + 1;
   res.redirect('/?room=' + req.params.slug);
 });
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
