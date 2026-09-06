@@ -31,14 +31,16 @@ Plataforma colaborativa onde usuários podem criar salas, adicionar músicas do 
 - **Express** - Framework web
 - **Socket.io** - Comunicação em tempo real
 - **Cookie-parser** - Gerenciamento de sessões
+- **Firebase Admin SDK** - Autenticação e banco de dados Firestore
 
 ## 📦 Instalação
 
 ### Pré-requisitos
 
-- Node.js (v14 ou superior)
+- Node.js (v18 ou superior)
 - NPM ou Yarn
-- Conexão com internet (para carregar APIs do YouTube)
+- Conta Firebase com Firestore ativado
+- Chave de API do YouTube
 
 ### Passos
 
