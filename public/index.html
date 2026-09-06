@@ -1560,13 +1560,26 @@
       if (shareUrls[platform]) window.open(shareUrls[platform], '_blank');
     }
 
+    // CORREÇÃO: copyInviteLink com fallback
     function copyInviteLink() {
       if (!currentRoom) return toast('Entre em uma sala', 'error');
       const url = window.location.origin + '/invite/' + currentRoom;
-      navigator.clipboard.writeText(url).then(() => {
-        toast('🔗 Link de convite copiado!', 'success');
-        fetch('/api/room/' + currentRoom + '/invite', { method: 'POST', credentials: 'include' }).catch(() => {});
-      }).catch(() => toast('Erro ao copiar', 'error'));
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          toast('🔗 Link de convite copiado!', 'success');
+          fetch('/api/room/' + currentRoom + '/invite', { method: 'POST', credentials: 'include' }).catch(() => {});
+        }).catch(() => fallbackCopy(url));
+      } else {
+        fallbackCopy(url);
+      }
+    }
+    function fallbackCopy(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try { document.execCommand('copy'); toast('🔗 Link copiado!', 'success'); } catch (e) { toast('Erro ao copiar', 'error'); }
+      document.body.removeChild(textarea);
     }
 
     // ===== FAVORITOS =====
@@ -1841,11 +1854,20 @@
         if (i !== currentIndex && isUserAdmin) {
           div.draggable = true;
           div.dataset.index = i;
-          div.dataset.id = track.id;
+          div.dataset.id = track._id || track.id; // usa _id para reorder
           div.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', i); div.classList.add('dragging'); });
           div.addEventListener('dragend', () => div.classList.remove('dragging'));
           div.addEventListener('dragover', (e) => e.preventDefault());
-          div.addEventListener('drop', (e) => { e.preventDefault(); const from = parseInt(e.dataTransfer.getData('text/plain')); if (from === i || from === currentIndex) return; const newOrder = queue.map(t => t.id); const [removed] = newOrder.splice(from, 1); newOrder.splice(i, 0, removed); socket.emit('reorderQueue', newOrder); });
+          div.addEventListener('drop', (e) => { 
+            e.preventDefault(); 
+            const from = parseInt(e.dataTransfer.getData('text/plain')); 
+            if (from === i || from === currentIndex) return; 
+            // Usa _id para reordenar
+            const newOrder = queue.map(t => t._id || t.id); 
+            const [removed] = newOrder.splice(from, 1); 
+            newOrder.splice(i, 0, removed); 
+            socket.emit('reorderQueue', newOrder); 
+          });
         }
         const votes = queueVotes[i] || { up: [], down: [] };
         const upCount = votes.up.length;
@@ -2078,8 +2100,9 @@
       scrollChatToBottom();
     }
 
+    // CORREÇÃO: limitChatMessages ignora pinned-message
     function limitChatMessages(container) {
-      const messages = container.querySelectorAll('.msg');
+      const messages = container.querySelectorAll('.msg:not(.pinned-message)');
       const total = messages.length;
       if (total > 10) {
         const toRemove = total - 10;
